@@ -84,14 +84,14 @@ module ROB (
     output reg  [`RLEN]     new_val,                                    // commit 的寄存器值
 
     // RS
-    output wire             idx_RS,                                     // 新指令在 ROB 中的位置发给 RS
+    output wire [`RBID]     idx_RS,                                     // 新指令在 ROB 中的位置发给 RS
     input  wire             val_flag_RS,                                // RS 是否发来更新
     input  wire [`RBID]     val_idx_RS,                                 // RS 更新对应 ROB 编号
     input  wire [`RLEN]     val_RS,                                     // RS 更新的值
     
 
     // LSB
-    output wire             idx_LSB,                                    // 新指令在 ROB 中的位置发给 LSB
+    output wire [`RBID]     idx_LSB,                                    // 新指令在 ROB 中的位置发给 LSB
     input  wire             val_flag_LSB,                               // LSB 是否发来更新
     input  wire [`RBID]     val_idx_LSB,                                // LSB 更新对应 ROB 编号
     input  wire [`RLEN]     val_LSB,                                    // LSB 更新的值
