@@ -91,10 +91,11 @@ module ROB (
     
 
     // LSB
-    output wire [`RBID]     idx_LSB,                                    // 新指令在 ROB 中的位置发给 LSB
+    output wire             idx_LSB,                                    // 新指令在 ROB 中的位置发给 LSB
     input  wire             val_flag_LSB,                               // LSB 是否发来更新
     input  wire [`RBID]     val_idx_LSB,                                // LSB 更新对应 ROB 编号
     input  wire [`RLEN]     val_LSB,                                    // LSB 更新的值
+    output reg              load_flag,                                  // 允许 LSB 中第一条 IO load 指令执行
     output reg              store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
 );
     reg             full;                                               // ROB 是否已满
@@ -104,6 +105,7 @@ module ROB (
     reg             jp_check    [`RBSZ];                                // 预测跳转 / 不跳转
     reg  [`RLEN]    val         [`RBSZ];                                // ROB 中储存的值
     reg  [`RIDX]    reg_idx     [`RBSZ];                                // 目标寄存器的编号
+    reg  [`ILEN]    ins         [`RBSZ];                                // 保存的指令
 
     reg             jalr_flag;                                          // 最旧的 jalr 指令是否存在
     reg  [`RIDX]    jalr_idx;                                           // 最旧的 jalr 指令在 ROB 中的编号
@@ -158,6 +160,7 @@ module ROB (
                 val[rear] <= jp_pc;
                 jp_check[rear] <= jp_flag;
                 reg_idx[rear] <= rd;
+                ins[rear] <= insty;
 
                 if (insty == `JALR && jalr_flag == `False) begin
                     jalr_flag <= `True;
@@ -167,70 +170,83 @@ module ROB (
 
             full <= ready[front] ? `False : (ins_flag && (front == (-(~rear))));
 
-            if (ready[front] || (val_flag_RS && val_idx_RS == front) || (val_flag_LSB && val_idx_LSB == front)) begin
-                front <= -(~front);
+            if (full || front != rear) begin
+                if (ready[front] || (val_flag_RS && val_idx_RS == front) || (val_flag_LSB && val_idx_LSB == front)) begin
+                    front <= -(~front);
 
-                if (insty == `SB || insty == `SH || insty == `SW) begin
-                    store_flag <= `True;
-                    write_flag <= `False;
-                end
-                else if (insty[5]) begin
-                    if (insty == `JALR) begin
-                        jp_wrong <= `True;
-                        jp_pc_IF <= ready[front] ? jalr_pc : val_RS;
-
-                        write_flag <= `True;
-                        write_idx <= front;
-                        write_rd <= rd;
-                        new_val <= val[front];
-
-                        store_flag <= `False;
-                    end 
-                    else if (insty == `JAL) begin
-                        write_flag <= `True;
-                        write_idx <= front;
-                        write_rd <= rd;
-                        new_val <= val[front];
-
-                        store_flag <= `False;
-                    end
-                    else if ((ready[front] && jp_check[front]) || (jp_check[front] != val_RS[0])) begin
-                        jp_wrong <= `True;
-                        jp_pc_IF <= val[front];
-                        
+                    load_flag <= `False;
+    
+                    if (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW) begin
+                        store_flag <= `True;
                         write_flag <= `False;
+                    end
+                    else if (ins[front][5]) begin
+                        if (ins[front] == `JALR) begin
+                            jp_wrong <= `True;
+                            jp_pc_IF <= ready[front] ? jalr_pc : val_RS;
+    
+                            write_flag <= `True;
+                            write_idx <= front;
+                            write_rd <= rd;
+                            new_val <= val[front];
+    
+                            store_flag <= `False;
+                        end 
+                        else if (ins[front] == `JAL) begin
+                            write_flag <= `True;
+                            write_idx <= front;
+                            write_rd <= rd;
+                            new_val <= val[front];
+    
+                            store_flag <= `False;
+                        end
+                        else if ((ready[front] && jp_check[front]) || (jp_check[front] != val_RS[0])) begin
+                            jp_wrong <= `True;
+                            jp_pc_IF <= val[front];
+                            
+                            write_flag <= `False;
+                            store_flag <= `False;
+                        end
+                    end
+                    else begin
+                        write_flag <= `True;
+                        write_idx <= front;
+                        write_rd <= rd;
+                        if (ready[front]) begin
+                            new_val <= val[front];
+                        end else if (val_flag_RS) begin
+                            new_val <= val_RS;
+                        end else begin
+                            new_val <= val_LSB;
+                        end
+    
                         store_flag <= `False;
                     end
                 end
                 else begin
-                    write_flag <= `True;
-                    write_idx <= front;
-                    write_rd <= rd;
-                    if (ready[front]) begin
-                        new_val <= val[front];
-                    end else if (val_flag_RS) begin
-                        new_val <= val_RS;
-                    end else begin
-                        new_val <= val_LSB;
-                    end
-
+                    if (ins[front][5] == `LB || ins[front][5] == `LH || ins[front][5] == `LW || ins[front][5] == `LBU || ins[front][5] == `LHU)
+                        load_flag <= `True;
+                    else
+                        load_flag <= `False;
                     store_flag <= `False;
-                end
+                    write_flag <= `False;
+                end 
             end
             else begin
+                load_flag <= `False;
                 store_flag <= `False;
                 write_flag <= `False;
             end
 
             if (val_flag_RS) begin
                 ready[val_idx_RS] <= `True;
-                if (insty[5]) begin
+                if (ins[val_idx_RS][5]) begin
                     jp_check[val_idx_RS] <= jp_check[val_idx_RS] != val_RS[0];
                 end else begin
                     val[val_idx_RS] <= val_RS;
                 end
                 
-                if (insty == `JALR)
+                if (ins[val_idx_RS] == `JALR)
                     jalr_pc <= val_RS;
             end
 
