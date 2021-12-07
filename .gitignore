@@ -4,3 +4,7 @@
 /**/__test
 /**/*.vcd
 /**/prj
+
+/**/testcase
+
+/**/*_old.v

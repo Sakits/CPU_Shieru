@@ -1,10 +1,10 @@
-#include "io.h"
+#include "io.inc"
 int a[4];
-int main()
-{
-    int b[4];
-    b[2]=2;
-    int *p;
-	p=b;
-    outlln(p[2]);
+int main() {
+  int b[4];
+  b[2] = 2;
+  int *p;
+  p = b;
+  printInt(p[2]);
+  return judgeResult % Mod;  // 175
 }

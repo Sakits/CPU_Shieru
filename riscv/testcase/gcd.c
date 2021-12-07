@@ -1,13 +1,15 @@
-#include "io.h"
+#include "io.inc"
+
 int gcd(int x, int y) {
-  if (x%y == 0) return y;
-  else return gcd(y, x%y);
+  if (x % y == 0)
+    return y;
+  else
+    return gcd(y, x % y);
 }
 
 int main() {
-    outlln(gcd(10,1));
-    outlln(gcd(34986,3087));
-    outlln(gcd(2907,1539));
-
-    return 0;
+  printInt(gcd(10, 1));
+  printInt(gcd(34986, 3087));
+  printInt(gcd(2907, 1539));
+  return judgeResult % Mod;  // 178
 }

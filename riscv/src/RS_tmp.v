@@ -17,10 +17,10 @@ module RS (
     input  wire             val_flag_RS,                                // RS 是否发来更新
     input  wire [`RBID]     val_idx_RS,                                 // RS 更新对应 ROB 编号
     input  wire [`RLEN]     val_RS,                                     // RS 更新的值
-    output wire             ari_ins_flag,                               // 是否发给 ALU 算术运算
-    output wire [`ILEN]     ari_insty,                                  // 发给 ALU 的算术运算指令
-    output wire [`RLEN]     ari_val1, ari_val2,                         // 发给 ALU 的算术运算值
-    output wire [`RBID]     ari_ROB_idx,                                // 发给 ALU 的算术运算目标 ROB 编号
+    output reg              ari_ins_flag,                               // 是否发给 ALU 算术运算
+    output reg  [`ILEN]     ari_insty,                                  // 发给 ALU 的算术运算指令
+    output reg  [`RLEN]     ari_val1, ari_val2,                         // 发给 ALU 的算术运算值
+    output reg  [`RBID]     ari_ROB_idx,                                // 发给 ALU 的算术运算目标 ROB 编号
     // output reg              cmp_ins_flag,                            // 是否发给 ALU 比较运算
     // output reg  [`ILEN]     cmp_insty,                               // 发给 ALU 的比较运算指令
     // output reg  [`RLEN]     cmp_val1, cmp_val2,                      // 发给 ALU 的比较运算值
@@ -44,15 +44,18 @@ module RS (
     wire [`RSSZ]    idle = (~used) & (-(~used));                        // 最低位未被使用的 RS
     reg  [`RSID]    idle_pos;                                           
 
-    wire [`RSSZ]    ready_state = used & val1_ready & val2_ready;       // RS 中可以运算的所有位置
+    wire [`RSSZ]    ready_state;                                        // RS 中可以运算的所有位置
+    genvar j;
+    generate
+        for (j = 0; j < `RSSIZE; j = j + 1) begin
+            assign ready_state[j] = used[j]
+                                 && (val1_ready[j] || (val_flag_RS && val_idx_RS == val1[j][`RBID]) || (val_flag_LSB && val_idx_LSB == val1[j][`RBID]))
+                                 && (val2_ready[j] || (val_flag_RS && val_idx_RS == val2[j][`RBID]) || (val_flag_LSB && val_idx_LSB == val2[j][`RBID]));
+        end
+    endgenerate
     wire [`RSSZ]    ready_pos_lowbit = ready_state & (-ready_state);    // RS 中最低位可以运算的位置
     reg  [`RSID]    ready_pos;
 
-    assign ari_ins_flag = ready_pos_lowbit != 0;
-    assign ari_insty = ins[ready_pos];
-    assign ari_val1 = val1[ready_pos];
-    assign ari_val2 = val2[ready_pos];
-    assign ari_ROB_idx = ROB_idx[ready_pos];
 
     always @(*) begin
         case (ready_pos_lowbit)
@@ -137,6 +140,11 @@ module RS (
     integer i;
     always @(posedge clk) begin
         if (rst || jp_wrong) begin
+            ari_ins_flag <= `False;
+            ari_insty <= `null6;
+            ari_val1 <= `null32; // 可以去掉
+            ari_val2 <= `null32; // 可以去掉
+
             used <= `null16;
             // val1_ready <= ~(`null16);
             // val2_ready <= ~(`null16);
@@ -163,8 +171,35 @@ module RS (
                 end    
             end
 
-            if (ready_pos_lowbit)
+            if (ready_pos_lowbit) begin
+                ari_ins_flag <= `True;
+                ari_insty <= ins[ready_pos];
+                ari_val1 <= val1[ready_pos];
+                ari_val2 <= val2[ready_pos];
+                ari_ROB_idx <= ROB_idx[ready_pos];
+
                 used[ready_pos] <= `False;
+
+                if (!val1_ready[ready_pos]) begin
+                    if (val_flag_RS && val_idx_RS == reg1) 
+                        ari_val1 <= val_RS;
+                    else 
+                        ari_val1 <= val_LSB;
+                end
+                else
+                    ari_val1 <= val1[ready_pos];
+
+                if (!val2_ready[ready_pos]) begin
+                    if (val_flag_RS && val_idx_RS == reg2)
+                        ari_val2 <= val_RS;
+                    else
+                        ari_val2 <= val_LSB;
+                end
+                else
+                    ari_val2 <= val2[ready_pos];
+            end
+            else
+                ari_ins_flag <= `False;
 
             for (i = 0; i < `RSSIZE; i = i + 1)
             begin

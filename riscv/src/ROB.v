@@ -1,62 +1,4 @@
-`define True        1'b1
-`define False       1'b0
-`define null1       1'b0
-`define null4       4'b0
-`define null5       5'b0
-`define null6       6'b0
-`define null32      32'b0
-`define LB          6'd0
-`define LH          6'd1
-`define LW          6'd2
-`define LBU         6'd3
-`define LHU         6'd4
-`define SB          6'd5
-`define SH          6'd6
-`define SW          6'd7
-`define LUI         6'd8
-`define AUIPC       6'd9
-`define ADD         6'd10
-`define ADDI        6'd11
-`define SUB         6'd12
-`define XOR         6'd13
-`define XORI        6'd14
-`define OR          6'd15
-`define ORI         6'd16
-`define AND         6'd17
-`define ANDI        6'd18
-`define SLL         6'd19
-`define SLLI        6'd20
-`define SRL         6'd21
-`define SRLI        6'd22
-`define SRA         6'd23
-`define SRAI        6'd24
-`define SLT         6'd28
-`define SLTI        6'd29
-`define SLTU        6'd30
-`define SLTIU       6'd31
-`define BEQ         6'd32
-`define BNE         6'd33
-`define BLT         6'd34
-`define BGE         6'd35
-`define BLTU        6'd36
-`define BGEU        6'd37
-`define JAL         6'd38
-`define JALR        6'd39
-`define JALOP       7'd111
-`define JALROP      7'd103
-`define LUIOP       7'd55     
-`define RSSIZE      16                                                  // RS 的大小
-`define LSBSIZE     16                                                  // LSB 的大小
-`define ROBSIZE     16                                                  // ROB 的大小
-`define RSSZ        15: 0                                               // RS 的数组大小
-`define RSID         3: 0                                               // RS 下标大小
-`define RBSZ        15: 0                                               // ROB 的数组大小
-`define RBID         3: 0                                               // ROB 的下标大小
-`define LSSZ        15: 0                                               // LSB 的数组大小
-`define LSID         3: 0                                               // LSB 的下标大小
-`define RLEN        31: 0                                               // 寄存器和 pc 的长度
-`define RIDX         4: 0                                               // 32 个寄存器的下标
-`define ILEN         5: 0                                               // 自定义指令的长度   
+`include "defines.v"
 
 module ROB (
     input  wire             clk, rst, rdy,    
@@ -64,6 +6,9 @@ module ROB (
 
     // InstFetch
     output reg  [`RLEN]     jp_pc_IF,                                   // 正确跳转到的 pc
+
+    // CDB
+    output reg  [`RBID]     front, rear,                                // ROB 的头尾
 
     // Decoder
     input  wire             jp_flag, ins_flag,                          // 预测跳转为 1，不跳转为 0； 指令是否有效
@@ -78,31 +23,27 @@ module ROB (
     output wire             upd_flag,                                   // 是否有新的指令加入 ROB
     output wire [`RBID]     upd_idx,                                    // 新指令在 ROB 的位置
     output wire [`RIDX]     upd_rd,                                     // 新指令的目标寄存器
-    output reg              write_flag,                                 // 是否 commit 了一条指令
-    output reg  [`RBID]     write_idx,                                  // commit 的 ROB 编号
-    output reg  [`RIDX]     write_rd,                                   // commit 的目标寄存器
-    output reg  [`RLEN]     new_val,                                    // commit 的寄存器值
+    output wire             write_flag,                                 // 是否 commit 了一条指令写寄存器
+    output wire [`RBID]     write_idx,                                  // commit 的 ROB 编号
+    output wire [`RIDX]     write_rd,                                   // commit 的目标寄存器
+    output wire [`RLEN]     new_val,                                    // commit 的寄存器值
 
     // RS
-    output wire [`RBID]     idx_RS,                                     // 新指令在 ROB 中的位置发给 RS
     input  wire             val_flag_RS,                                // RS 是否发来更新
     input  wire [`RBID]     val_idx_RS,                                 // RS 更新对应 ROB 编号
     input  wire [`RLEN]     val_RS,                                     // RS 更新的值
     
 
     // LSB
-    output wire             idx_LSB,                                    // 新指令在 ROB 中的位置发给 LSB
     input  wire             val_flag_LSB,                               // LSB 是否发来更新
     input  wire [`RBID]     val_idx_LSB,                                // LSB 更新对应 ROB 编号
     input  wire [`RLEN]     val_LSB,                                    // LSB 更新的值
-    output reg              load_flag,                                  // 允许 LSB 中第一条 IO load 指令执行
-    output reg              store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
+    output wire             store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
 );
     reg             full;                                               // ROB 是否已满
-    reg  [`RBID]    front, rear;                                        // ROB 循环队列的头尾
 
-    reg             ready       [`RBSZ];                                // 是否可以 commit
-    reg             jp_check    [`RBSZ];                                // 预测跳转 / 不跳转
+    reg  [`RBSZ]    ready;                                              // 是否可以 commit
+    reg  [`RBSZ]    jp_check;                                           // 预测跳转 / 不跳转
     reg  [`RLEN]    val         [`RBSZ];                                // ROB 中储存的值
     reg  [`RIDX]    reg_idx     [`RBSZ];                                // 目标寄存器的编号
     reg  [`ILEN]    ins         [`RBSZ];                                // 保存的指令
@@ -112,8 +53,6 @@ module ROB (
     reg  [`RLEN]    jalr_pc;                                            // 最旧的 jalr 指令想跳转到哪
 
     assign ROB_full = full;
-    assign idx_RS = rear;
-    assign idx_LSB = rear;
 
     assign rs1_ready_ID = ready[rs1_idx];
     assign rs2_ready_ID = ready[rs2_idx];
@@ -124,118 +63,57 @@ module ROB (
     assign upd_idx = rear;
     assign upd_rd = rd;
 
+    assign store_flag = (full || front != rear) && (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW);
+
+    assign write_flag = (full || front != rear) && ready[front] && (!ins[front][5] || ins[front] == `JAL || ins[front] == `JALR);
+    assign write_idx = front;
+    assign write_rd = rd;
+    assign new_val = val[front];
+
     integer i;
     always @(posedge clk) begin
         if (rst || jp_wrong) begin
             jp_wrong <= `False;
+            jp_pc_IF <= `null32;
 
             full <= `False;
             front <= `null4;
             rear <= `null4;
 
-            for (i = 0; i < `ROBSIZE; i = i + 1) begin
-                ready[i] <= `False;
-                val[i] <= `null32; // 可以去掉
-                reg_idx[i] <= `null5;
-            end
-
             jalr_flag <= `False;
             jalr_idx <= `null5;
             jalr_pc <= `null32; // 可以去掉
-
-            write_flag <= `False;
-            write_idx <= `null4;
-            write_rd <= `null5;
-            new_val <= `null32;
-
-            store_flag <= `False;
         end
         else if (!rdy) begin
             
         end
         else begin
+            full <= ready[front] ? `False : (ins_flag && (front == (-(~rear))));
+
             if (ins_flag) begin
                 rear <= -(~rear);
                 ready[rear] <= (insty == `SB || insty == `SH || insty == `SW || insty == `JAL);
-                val[rear] <= jp_pc;
                 jp_check[rear] <= jp_flag;
+                val[rear] <= jp_pc;
                 reg_idx[rear] <= rd;
                 ins[rear] <= insty;
 
                 if (insty == `JALR && jalr_flag == `False) begin
                     jalr_flag <= `True;
                     jalr_idx <= rear;
+                    jalr_pc <= `null32; // 可以去掉
                 end
             end
-
-            full <= ready[front] ? `False : (ins_flag && (front == (-(~rear))));
 
             if (full || front != rear) begin
                 if (ready[front] || (val_flag_RS && val_idx_RS == front) || (val_flag_LSB && val_idx_LSB == front)) begin
                     front <= -(~front);
 
-                    load_flag <= `False;
-    
-                    if (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW) begin
-                        store_flag <= `True;
-                        write_flag <= `False;
-                    end
-                    else if (ins[front][5]) begin
-                        if (ins[front] == `JALR) begin
-                            jp_wrong <= `True;
-                            jp_pc_IF <= ready[front] ? jalr_pc : val_RS;
-    
-                            write_flag <= `True;
-                            write_idx <= front;
-                            write_rd <= rd;
-                            new_val <= val[front];
-    
-                            store_flag <= `False;
-                        end 
-                        else if (ins[front] == `JAL) begin
-                            write_flag <= `True;
-                            write_idx <= front;
-                            write_rd <= rd;
-                            new_val <= val[front];
-    
-                            store_flag <= `False;
-                        end
-                        else if ((ready[front] && jp_check[front]) || (jp_check[front] != val_RS[0])) begin
-                            jp_wrong <= `True;
-                            jp_pc_IF <= val[front];
-                            
-                            write_flag <= `False;
-                            store_flag <= `False;
-                        end
-                    end
-                    else begin
-                        write_flag <= `True;
-                        write_idx <= front;
-                        write_rd <= rd;
-                        if (ready[front]) begin
-                            new_val <= val[front];
-                        end else if (val_flag_RS) begin
-                            new_val <= val_RS;
-                        end else begin
-                            new_val <= val_LSB;
-                        end
-    
-                        store_flag <= `False;
+                    if (ins[front] == `JALR || ready[front] && jp_check[front] || (!ready[front] && jp_check[front] != val_RS[0])) begin
+                        jp_wrong <= `True;
+                        jp_pc_IF <= val[front];
                     end
                 end
-                else begin
-                    if (ins[front][5] == `LB || ins[front][5] == `LH || ins[front][5] == `LW || ins[front][5] == `LBU || ins[front][5] == `LHU)
-                        load_flag <= `True;
-                    else
-                        load_flag <= `False;
-                    store_flag <= `False;
-                    write_flag <= `False;
-                end 
-            end
-            else begin
-                load_flag <= `False;
-                store_flag <= `False;
-                write_flag <= `False;
             end
 
             if (val_flag_RS) begin

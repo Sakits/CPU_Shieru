@@ -1,9 +1,12 @@
 `define True        1'b1
 `define False       1'b0
 `define null1       1'b0
+`define null2       2'b0
 `define null4       4'b0
 `define null5       5'b0
 `define null6       6'b0
+`define null8       8'b0
+`define null16      16'b0
 `define null32      32'b0
 `define LB          6'd0
 `define LH          6'd1
@@ -40,11 +43,11 @@
 `define BGE         6'd35
 `define BLTU        6'd36
 `define BGEU        6'd37
-`define JAL         6'd38
-`define JALR        6'd39
+`define JAL         6'd48
+`define JALR        6'd49
 `define JALOP       7'd111
 `define JALROP      7'd103
-`define LUIOP       7'd55     
+`define LUIOP       7'd55
 `define RSSIZE      16                                                  // RS 的大小
 `define LSBSIZE     16                                                  // LSB 的大小
 `define ROBSIZE     16                                                  // ROB 的大小
@@ -56,4 +59,7 @@
 `define LSID         3: 0                                               // LSB 的下标大小
 `define RLEN        31: 0                                               // 寄存器和 pc 的长度
 `define RIDX         4: 0                                               // 32 个寄存器的下标
-`define ILEN         5: 0                                               // 自定义指令的长度   
+`define ILEN         5: 0                                               // 指令长度
+`define ICSZ       512: 0                                               // ICache 大小
+`define ICID        10: 2                                               // ICache index 位置
+`define TGID        17:11                                               // ICache tag   位置
