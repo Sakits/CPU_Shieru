@@ -47,7 +47,12 @@ module Decoder (
     // LSB
     assign insty_LSB = insty[2:0];
 
+    reg  [31: 0] debug_now;
     always @(posedge clk) begin
+        debug_now <= debug_now + 1;
+        // $display("DC: ", debug_now);
+        if (rst)
+            debug_now <= 0;
         if (rst || jp_wrong || !ins_flag) begin
             rs1 <= `null5;
             rs2 <= `null5;
@@ -106,8 +111,7 @@ module Decoder (
                         3'b010: insty <= `SLTI;
                         3'b011: insty <= `SLTIU;
                     endcase
-                    imm <= (ins[14:12] == 1 || ins[14:12] == 5) ? {{20{ins[31]}}, ins[31:20]} : {27'b0, ins[24:20]};
-
+                    imm <= (ins[14:12] == 1 || ins[14:12] == 5) ? {27'b0, ins[24:20]} : {{20{ins[31]}}, ins[31:20]};
                     ins_flag_RS <= `True;
                 end
                 7'd51 : begin
@@ -134,7 +138,7 @@ module Decoder (
                         3'b111: insty <= `BGEU;
                     endcase
                     imm <= {{20{ins[31]}}, ins[7], ins[31:25], ins[11:8]} << 1; 
-
+                    
                     ins_flag_RS <= `True;
                 end
                 7'd55 : begin

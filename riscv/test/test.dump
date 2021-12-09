@@ -1,0 +1,64 @@
+
+./test/test.om：     文件格式 elf32-littleriscv
+
+
+Disassembly of section .rom:
+
+00000000 <.rom>:
+   0:	00020137          	lui	sp,0x20
+   4:	7fd000ef          	jal	ra,1000 <main>
+   8:	0ff00513          	li	a0,255
+   c:	000306b7          	lui	a3,0x30
+  10:	00a68223          	sb	a0,4(a3) # 30004 <__heap_start+0x2e004>
+  14:	ff9ff06f          	j	c <main-0xff4>
+
+Disassembly of section .text.startup:
+
+00001000 <main>:
+    1000:	000017b7          	lui	a5,0x1
+    1004:	02878793          	addi	a5,a5,40 # 1028 <main+0x28>
+    1008:	06800713          	li	a4,104
+    100c:	000306b7          	lui	a3,0x30
+    1010:	00e68023          	sb	a4,0(a3) # 30000 <__heap_start+0x2e000>
+    1014:	0017c703          	lbu	a4,1(a5)
+    1018:	00178793          	addi	a5,a5,1
+    101c:	fe071ae3          	bnez	a4,1010 <main+0x10>
+    1020:	00000513          	li	a0,0
+    1024:	00008067          	ret
+
+Disassembly of section .rodata.str1.4:
+
+00001028 <__bss_end-0xc>:
+    1028:	6568                	flw	fa0,76(a0)
+    102a:	6c6c                	flw	fa1,92(s0)
+    102c:	6f77206f          	j	73f22 <__heap_start+0x71f22>
+    1030:	6c72                	flw	fs8,28(sp)
+    1032:	0064                	addi	s1,sp,12
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1b41                	addi	s6,s6,-16
+   2:	0000                	unimp
+   4:	7200                	flw	fs0,32(a2)
+   6:	7369                	lui	t1,0xffffa
+   8:	01007663          	bgeu	zero,a6,14 <main-0xfec>
+   c:	0011                	c.nop	4
+   e:	0000                	unimp
+  10:	1004                	addi	s1,sp,32
+  12:	7205                	lui	tp,0xfffe1
+  14:	3376                	fld	ft6,376(sp)
+  16:	6932                	flw	fs2,12(sp)
+  18:	7032                	flw	ft0,44(sp)
+  1a:	0030                	addi	a2,sp,8
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	fmsub.d	ft6,ft6,ft4,ft7,rmm
+   4:	2820                	fld	fs0,80(s0)
+   6:	29554e47          	fmsub.s	ft8,fa0,fs5,ft5,rmm
+   a:	3120                	fld	fs0,96(a0)
+   c:	2e31                	jal	328 <main-0xcd8>
+   e:	2e31                	jal	32a <main-0xcd6>
+  10:	0030                	addi	a2,sp,8

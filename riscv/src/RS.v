@@ -135,7 +135,12 @@ module RS (
     end
     
     integer i;
+    reg [31: 0] debug_now;
     always @(posedge clk) begin
+        debug_now <= debug_now + 1;
+        // $display("RS: ", debug_now);
+        if (rst)
+            debug_now <= 0;
         if (rst || jp_wrong) begin
             used <= `null16;
             // val1_ready <= ~(`null16);

@@ -1,5 +1,6 @@
 `include "defines.v"
 
+
 module LSB (
     input  wire             clk, rst, rdy, 
     input  wire             jp_wrong,                                   // 跳转错误
@@ -58,6 +59,7 @@ module LSB (
     assign val_out = val_flag ? val2[-(~front)] : val2[front];
 
     always @(*) begin
+        $display("robidx[front]", iscommit[front]);
         if (full || front != rear) begin
             if (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW) 
                 now_val_flag_MC = iscommit[front];
@@ -78,12 +80,23 @@ module LSB (
     end
 
     integer i;
+
+    // always @(*) begin
+    //     $display("commit_cnt", commit_cnt);
+    // end
+
+    reg [31: 0] debug_now;
     always @(posedge clk) begin
+        debug_now <= debug_now + 1;
+        // $display("LSB: ", debug_now);
+        if (rst)
+            debug_now <= 0;
         if (rst) begin
             full <= `False;
             front <= `null4;
             rear <= `null4;
             commit_cnt <= `null4;
+            // $display("commit_cnt_new:", commit_cnt);
             val1_ready <= `null16;
             val2_ready <= `null16;
             iscommit <= `null16;
@@ -92,11 +105,12 @@ module LSB (
             
         end
         else if (jp_wrong) begin
-            full <= commit_cnt == 0;
+            full <= commit_cnt == `LSBSIZE;
             rear <= front + commit_cnt;
             val1_ready <= `null16;
             val2_ready <= `null16;      
-        end begin
+        end 
+        else begin
             full <= val_flag ? `False : (ins_flag && (front == (-(~rear))));
 
             if (ins_flag) begin
@@ -110,13 +124,26 @@ module LSB (
                 val1[rear] <= reg1;
                 val2[rear] <= reg2;
                 val_imm[rear] <= imm;
-            end
-            
-            if (val_flag) begin
-                front <= -(~front);
-                commit_cnt = commit_cnt - iscommit[front];
+
+                $display("LSB rear:", rear);
+                $display("LSB val1:", val1[rear]);
+                $display("LSB val2:", val2[rear]);
             end
 
+            if (val_flag)
+                front <= -(~front);
+
+            $display("ins", (val_flag && ins[front][2] && ins[front][1:0] != 0));
+            $display("ins2", store_flag);
+            $display("ins3", commit_cnt);
+            commit_cnt <= commit_cnt - (val_flag && ins[front][2] && ins[front][1:0] != 0) + store_flag;
+
+            if (store_flag) begin
+                iscommit[front + commit_cnt] <= `True;
+                // $display("front:", front);
+                // $display("commit_cnt:", commit_cnt); 
+            end
+            
             for (i = 0; i < `LSBSIZE; i = i + 1)
             begin
                 if (val_flag_RS && !val1_ready[i] && val1[i][`RBID] == val_idx_RS) begin

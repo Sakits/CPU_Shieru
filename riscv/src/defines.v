@@ -60,6 +60,6 @@
 `define RLEN        31: 0                                               // 寄存器和 pc 的长度
 `define RIDX         4: 0                                               // 32 个寄存器的下标
 `define ILEN         5: 0                                               // 指令长度
-`define ICSZ       512: 0                                               // ICache 大小
+`define ICSZ       511: 0                                               // ICache 大小
 `define ICID        10: 2                                               // ICache index 位置
 `define TGID        17:11                                               // ICache tag   位置

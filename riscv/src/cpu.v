@@ -1,13 +1,4 @@
 `include "defines.v"
-`include "IF.v"
-`include "ICache.v"
-`include "Decoder.v"
-`include "ROB.v"
-`include "RegFile.v"
-`include "RS.v"
-`include "ALU.v"
-`include "LSB.v"
-`include "MemCtrl.v"
 
 // RISCV32I CPU top module
 // port modification allowed for debugging purposes
@@ -48,6 +39,7 @@ wire                IF_ins_flag_ID, IF_jp_flag_ID;
 wire [31: 0]        IF_ins_ID, IF_jp_pc_ID;
 
 wire [31: 0]        IF_pc_out;
+wire                IF_is_stall_IC;
 
 IF IF(
     // input
@@ -64,7 +56,8 @@ IF IF(
     // input
     .ins_flag(IC_ins_flag_IF), .ins(IC_ins_IF), 
     // output
-    .pc_out(IF_pc_out)
+    .pc_out(IF_pc_out), 
+    .is_stall_IC(IF_is_stall_IC)
 );
 
 wire                IC_ins_flag_IF;
@@ -79,6 +72,7 @@ ICache ICache(
     // IF
     // input
     .pc(IF_pc_out), 
+    .is_stall(IF_is_stall_IC), 
     // output
     .ins_flag_IF(IC_ins_flag_IF), 
     .ins_IF(IC_ins_IF), 

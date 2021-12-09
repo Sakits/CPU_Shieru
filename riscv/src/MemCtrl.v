@@ -29,16 +29,21 @@ module MemCtrl (
     reg             last_is_read;
     reg  [ 1: 0]    step_LSB, step_IC;
     reg  [31: 0]    val_LSB, val_IC;
+    reg             last_is_IC;
     wire            is_IO = addr_LSB[17:16] == 2'b11;
 
     always @(*) begin
         if (val_in_flag_LSB) begin
-            mem_a = addr_LSB + step_LSB;
             if (!insty_LSB[2] || !insty_LSB[1:0] || (is_IO && last_is_read)) begin
+                if (!insty_LSB[2] || !insty_LSB[1:0])
+                    mem_a = addr_LSB + step_LSB;
+                else
+                    mem_a = `null32;
                 mem_dout = `null8;
                 mem_wr = `False;
             end
             else begin
+                mem_a = addr_LSB + step_LSB;
                 case (step_LSB)
                     2'b00: mem_dout = val_in_LSB[ 7: 0];
                     2'b01: mem_dout = val_in_LSB[15: 8];
@@ -64,30 +69,45 @@ module MemCtrl (
         endcase
 
         val_out_IC = {mem_din, val_IC[23: 0]};
+        // $display("val_out_flag:", val_out_flag_IC);
+        // $display("mem_wr:", mem_wr);
+        // $display("mem_a:", addr_IC);
+        // $display("mem_dout:", mem_dout);
+        // $display("mem_din:", mem_din);
+        // $display("val_out:", "%h", val_out_IC);
     end
 
+    reg [31: 0] debug_now;
     always @(posedge clk) begin
+        debug_now <= debug_now + 1;
+        // $display("MC: ", debug_now);
+        if (rst)
+            debug_now <= 0;
+
         if (rst) begin
             val_out_flag_IC <= `False;
             val_out_flag_LSB <= `False;
             mem_wr <= `False;
             last_is_read <= `False;
+            last_is_IC <= `True;
             step_LSB <= `null2;
             step_IC <= `null2;
+            // $display("rst: ", rst, " step_IC: ", step_IC);
         end 
         else if (!rdy) begin
             
-        end if (jp_wrong && (!val_in_flag_LSB || !(insty_LSB == `SB || insty_LSB == `SH || insty_LSB == `SW))) begin
+        end 
+        else if (jp_wrong) begin
             val_out_flag_IC <= `False;
-            val_out_flag_LSB <= `False;
-            mem_wr <= `False;
-            last_is_read <= `False;
-            step_LSB <= `null2;
             step_IC <= `null2;
+            if (!val_in_flag_LSB || !(insty_LSB == `SB || insty_LSB == `SH || insty_LSB == `SW)) begin
+                val_out_flag_LSB <= `False; 
+                step_LSB <= `null2;
+            end
+            last_is_read <= `False;
         end
         else begin
             if (val_in_flag_LSB) begin
-
                 case (step_LSB)
                     2'b01: val_LSB[ 7: 0] <= mem_din;
                     2'b10: val_LSB[15: 8] <= mem_din;
@@ -135,20 +155,32 @@ module MemCtrl (
                             step_LSB <= -(~step_LSB);
                     end
                 endcase
+
+                val_out_flag_IC <= `False;
+                last_is_IC <= `False;
             end
             else if (val_in_flag_IC) begin
+                val_out_flag_IC <= step_IC == 2'b11;
+                last_is_read <= `True;
+                last_is_IC <= `True;
+                step_IC <= -(~step_IC);
+
+                val_out_flag_LSB <= `False;
+            end
+            else begin
+                val_out_flag_IC <= `False;
+                val_out_flag_LSB <= `False;
+                last_is_IC <= `False;;
+                last_is_read <= `False;
+            end
+
+            if (last_is_IC) begin
                 case (step_IC)
                     2'b01: val_IC[ 7: 0] <= mem_din;
                     2'b10: val_IC[15: 8] <= mem_din;
                     2'b11: val_IC[23:16] <= mem_din;
                 endcase
-
-                val_out_flag_IC <= step_IC == 2'b11;
-                last_is_read <= `True;
-                step_IC <= -(~step_IC);
             end
-            else
-                last_is_read <= `False;
         end 
     end
     

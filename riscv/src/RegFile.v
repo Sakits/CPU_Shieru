@@ -27,9 +27,16 @@ module RegFile (
     assign rs2_pos = ROB_pos[rs2];
 
     integer i;
+    reg [31: 0] debug_now;
     always @(posedge clk) begin
+        debug_now <= debug_now + 1;
+        // $display("RF: ", debug_now);
+        if (rst)
+            debug_now <= 0;
         if (rst) begin
             reg_state <= ~(`null32);
+            for (i = 0; i < 32; i = i + 1)
+                reg_val[i] <= `null32;
         end
         else if (!rdy) begin
             

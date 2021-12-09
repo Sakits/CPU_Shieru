@@ -23,7 +23,7 @@ module ROB (
     output wire             upd_flag,                                   // 是否有新的指令加入 ROB
     output wire [`RBID]     upd_idx,                                    // 新指令在 ROB 的位置
     output wire [`RIDX]     upd_rd,                                     // 新指令的目标寄存器
-    output wire             write_flag,                                 // 是否 commit 了一条指令写寄存器
+    output reg              write_flag,                                 // 是否 commit 了一条指令写寄存器
     output wire [`RBID]     write_idx,                                  // commit 的 ROB 编号
     output wire [`RIDX]     write_rd,                                   // commit 的目标寄存器
     output wire [`RLEN]     new_val,                                    // commit 的寄存器值
@@ -38,7 +38,7 @@ module ROB (
     input  wire             val_flag_LSB,                               // LSB 是否发来更新
     input  wire [`RBID]     val_idx_LSB,                                // LSB 更新对应 ROB 编号
     input  wire [`RLEN]     val_LSB,                                    // LSB 更新的值
-    output wire             store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
+    output reg              store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
 );
     reg             full;                                               // ROB 是否已满
 
@@ -59,19 +59,29 @@ module ROB (
     assign reg1_ID = ready[rs1_idx] ? val[rs1_idx] : rs1_idx;
     assign reg2_ID = ready[rs2_idx] ? val[rs2_idx] : rs2_idx;
 
-    assign upd_flag = ins_flag ? rd : `null1;
+    always @(*) begin
+        $display("rs2_idx:", rs2_idx);
+        $display("ready:", ready[rs2_idx]);
+        $display("reg2:", val[rs2_idx]);
+    end
+
+    assign upd_flag = ins_flag ? (rd != 0) : `False;
     assign upd_idx = rear;
     assign upd_rd = rd;
 
-    assign store_flag = (full || front != rear) && (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW);
-
-    assign write_flag = (full || front != rear) && ready[front] && (!ins[front][5] || ins[front] == `JAL || ins[front] == `JALR);
     assign write_idx = front;
-    assign write_rd = rd;
+    assign write_rd = reg_idx[front];
     assign new_val = val[front];
 
     integer i;
+
+    reg [31: 0] debug_now;
     always @(posedge clk) begin
+        debug_now <= debug_now + 1;
+        // $display("ROB: ", debug_now);
+        if (rst)
+            debug_now <= 0;
+
         if (rst || jp_wrong) begin
             jp_wrong <= `False;
             jp_pc_IF <= `null32;
@@ -83,6 +93,11 @@ module ROB (
             jalr_flag <= `False;
             jalr_idx <= `null5;
             jalr_pc <= `null32; // 可以去掉
+
+            ready <= `null16;
+            write_flag <= `False;
+            store_flag <= `False;
+            // ready <= ~(`null16);
         end
         else if (!rdy) begin
             
@@ -92,7 +107,9 @@ module ROB (
 
             if (ins_flag) begin
                 rear <= -(~rear);
-                ready[rear] <= (insty == `SB || insty == `SH || insty == `SW || insty == `JAL);
+                ready[rear] <= (insty == `SB || insty == `SH || insty == `SW || insty == `JAL || insty == `LUI);
+                // $display("rear:", rear);
+                // $display("jp_flag:", jp_flag);
                 jp_check[rear] <= jp_flag;
                 val[rear] <= jp_pc;
                 reg_idx[rear] <= rd;
@@ -108,19 +125,29 @@ module ROB (
             if (full || front != rear) begin
                 if (ready[front] || (val_flag_RS && val_idx_RS == front) || (val_flag_LSB && val_idx_LSB == front)) begin
                     front <= -(~front);
-
-                    if (ins[front] == `JALR || ready[front] && jp_check[front] || (!ready[front] && jp_check[front] != val_RS[0])) begin
+                    write_flag <= ready[front] && (!ins[front][5] || ins[front] == `JAL || ins[front] == `JALR);
+                    store_flag <= (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW);
+                    $display("frontt:", front);
+                    $display("ready:", ready[front]);
+                    $display("jpcheck:", jp_check[front]);
+                    $display("val:", val_RS[0]);
+                    if (ins[front] == `JALR || (ins[front][5]) && (ready[front] && jp_check[front] || (!ready[front] && jp_check[front] != val_RS[0]))) begin                      
                         jp_wrong <= `True;
-                        jp_pc_IF <= val[front];
+                        jp_pc_IF <= ins[front] == `JALR ? (ready[front] ? jalr_pc : val_RS) : val[front];
                     end
                 end
             end
 
             if (val_flag_RS) begin
                 ready[val_idx_RS] <= `True;
-                if (ins[val_idx_RS][5]) begin
+                if (ins[val_idx_RS][5] && !ins[val_idx_RS][4]) begin
+                    $display("val_idx_RSjp:", val_idx_RS);
+                    $display("val_idx_RSjp:", jp_check[val_idx_RS]);
+                    $display("val_idx_RSjp:", val_RS[0]);
                     jp_check[val_idx_RS] <= jp_check[val_idx_RS] != val_RS[0];
-                end else begin
+                end 
+                else begin
+                    $display("val_idx_RS:", val_idx_RS);
                     val[val_idx_RS] <= val_RS;
                 end
                 
