@@ -1,6 +1,5 @@
 `include "defines.v"
 
-
 module LSB (
     input  wire             clk, rst, rdy, 
     input  wire             jp_wrong,                                   // 跳转错误
@@ -185,7 +184,9 @@ module LSB (
                 front <= -(~front);
             commit_cnt <= commit_cnt - (val_flag && ins[front][2] && ins[front][1:0] != 0);
         end 
-        else begin
+
+        if (!rst && rdy && !jp_wrong)
+        begin
             full <= val_flag ? (full && ins_flag) : (full || (ins_flag && (front == (-(~rear)))));
 
             if (ins_flag) begin

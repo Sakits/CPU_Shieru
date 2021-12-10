@@ -41,7 +41,7 @@ module ROB (
     input  wire [`RLEN]     val_LSB,                                    // LSB 更新的值
     output wire             store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
 );
-    reg  [31: 0]    debug_ins   [`RBSZ];
+    // reg  [31: 0]    debug_ins   [`RBSZ];
 
     reg             full;                                               // ROB 是否已满
 
@@ -116,7 +116,7 @@ module ROB (
 
             if (ins_flag) begin
                 rear <= -(~rear);
-                debug_ins[rear] <= debug_ins_ID;
+                // debug_ins[rear] <= debug_ins_ID;
                 ready[rear] <= (insty == `SB || insty == `SH || insty == `SW || insty == `JAL || insty == `LUI);
                 // $display("rear:", rear);
                 // $display("jp_flag:", jp_flag);

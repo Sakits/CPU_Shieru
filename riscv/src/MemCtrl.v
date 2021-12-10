@@ -113,7 +113,9 @@ module MemCtrl (
             end
             last_is_read <= `False;
         end
-        else begin
+        
+        if (!rst && rdy && !jp_wrong)
+        begin
             last_insty <= insty_LSB;
             
             if (val_in_flag_LSB) begin

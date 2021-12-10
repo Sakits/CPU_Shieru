@@ -148,10 +148,9 @@ module RS (
             // val1_ready <= ~(`null16);
             // val2_ready <= ~(`null16);
         end
-        else if (!rdy) begin
-            
-        end
-        else begin
+
+        if (!rst && rdy && !jp_wrong)
+        begin
             if (ins_flag) begin
                 used[idle_pos] <= `True;
                 ins[idle_pos] <= insty;
