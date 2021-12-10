@@ -1,3 +1,0 @@
-WARNING: common/block_ram/block_ram.v:93: $readmemh: Standard inconsistency, following 1364-2005.
-VCD info: dumpfile cpu_run.vcd opened for output.
-hello, world!
