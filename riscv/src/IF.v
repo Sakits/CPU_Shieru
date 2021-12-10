@@ -34,7 +34,7 @@ module IF (
     wire [ 6: 0]    opcode = ins[6:0];
     reg  [31: 0]    pc;
     assign is_stall_IC = (opcode == `JALOP && ins_flag);
-    assign pc_out = ins_flag ? pc + 4 : pc;
+    assign pc_out = (ins_flag & !stall_ID) ? pc + 4 : pc;
     assign jp_flag_ID = 4 == imm;
     assign jp_pc_ID = (opcode == `JALOP || opcode == `JALROP) ? pc + 4
                     : (opcode == `LUIOP) ? imm

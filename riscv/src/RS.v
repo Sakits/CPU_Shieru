@@ -48,6 +48,8 @@ module RS (
     wire [`RSSZ]    ready_pos_lowbit = ready_state & (-ready_state);    // RS 中最低位可以运算的位置
     reg  [`RSID]    ready_pos;
 
+    reg             pre_ready_pos;
+
     assign ari_ins_flag = ready_pos_lowbit != 0;
     assign ari_insty = ins[ready_pos];
     assign ari_val1 = val1[ready_pos];
@@ -151,14 +153,14 @@ module RS (
         end
         else begin
             if (ins_flag) begin
-                ins[idle_pos] <= insty;
                 used[idle_pos] <= `True;
+                ins[idle_pos] <= insty;
                 ROB_idx[idle_pos] <= new_ROB_idx;
 
                 val1[idle_pos] <= new_reg1;
                 val1_ready[idle_pos] <= new_rs1_ready;
 
-                if (insty == `JALR || (!insty[5] && insty[0])) begin
+                if (insty == `JALR || (!insty[5] && !insty[0] && insty != `SUB)) begin
                     val2[idle_pos] <= imm;
                     val2_ready[idle_pos] <= `True;    
                 end
@@ -168,8 +170,10 @@ module RS (
                 end    
             end
 
-            if (ready_pos_lowbit)
+            if (ready_pos_lowbit) begin
                 used[ready_pos] <= `False;
+                pre_ready_pos <= ready_pos; 
+            end
 
             for (i = 0; i < `RSSIZE; i = i + 1)
             begin

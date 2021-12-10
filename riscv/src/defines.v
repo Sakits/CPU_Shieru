@@ -18,9 +18,9 @@
 `define SW          6'd7
 `define LUI         6'd8
 `define AUIPC       6'd9
-`define ADD         6'd10
-`define ADDI        6'd11
-`define SUB         6'd12
+`define SUB         6'd10
+`define ADD         6'd11
+`define ADDI        6'd12
 `define XOR         6'd13
 `define XORI        6'd14
 `define OR          6'd15
@@ -33,10 +33,10 @@
 `define SRLI        6'd22
 `define SRA         6'd23
 `define SRAI        6'd24
-`define SLT         6'd28
-`define SLTI        6'd29
-`define SLTU        6'd30
-`define SLTIU       6'd31
+`define SLTI        6'd28
+`define SLT         6'd29
+`define SLTIU       6'd30
+`define SLTU        6'd31
 `define BEQ         6'd32
 `define BNE         6'd33
 `define BLT         6'd34

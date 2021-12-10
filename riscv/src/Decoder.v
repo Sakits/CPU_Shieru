@@ -25,11 +25,13 @@ module Decoder (
     output wire [ 2: 0]     insty_LSB, 
 
     // ROB
-    input  wire             ROB_full, rs1_ready_ROB, rs2_ready_ROB, 
+    input  wire             ROB_full, LSB_full, 
+    input  wire             rs1_ready_ROB, rs2_ready_ROB, 
     input  wire [31: 0]     reg1_ROB, reg2_ROB, 
     output reg              ins_flag_ROB, 
     output reg              jp_flag_ROB, 
     output reg  [31: 0]     jp_pc_ROB, 
+    output reg  [31: 0]     debug_ins_ROB, 
 
     // RS
     output reg              ins_flag_RS
@@ -42,7 +44,7 @@ module Decoder (
     assign rs2_ready_CDB = rs2_ready ? `True : rs2_ready_ROB;
     assign reg1_CDB = rs1_ready ? reg1 : reg1_ROB;
     assign reg2_CDB = rs2_ready ? reg2 : reg2_ROB;
-    assign stall_IF = ROB_full;
+    assign stall_IF = ROB_full | LSB_full;
 
     // LSB
     assign insty_LSB = insty[2:0];
@@ -53,7 +55,7 @@ module Decoder (
         // $display("DC: ", debug_now);
         if (rst)
             debug_now <= 0;
-        if (rst || jp_wrong || !ins_flag) begin
+        if (rst || jp_wrong || !ins_flag || ROB_full || LSB_full) begin
             rs1 <= `null5;
             rs2 <= `null5;
             rd <= `null5;
@@ -65,10 +67,12 @@ module Decoder (
             jp_pc_ROB <= `null32;
             ins_flag_RS <= `False;
         end
-        else if (!rdy || ROB_full) begin
+        else if (!rdy) begin
             
         end
         else begin
+            debug_ins_ROB <= ins;
+
             ins_flag_ROB <= `True;
             ins_flag_LSB <= (opcode == 7'd3 || opcode == 7'd35);
 

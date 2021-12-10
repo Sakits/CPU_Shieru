@@ -176,7 +176,7 @@ always @(posedge clk)
         q_io_in_wr_en      <= d_io_in_wr_en;
         q_io_in_wr_data    <= d_io_in_wr_data;
         q_io_en            <= io_en;
-        q_cpu_cycle_cnt    <= d_cpu_cycle_cnt;
+        q_cpu_cycle_cnt    <= q_cpu_cycle_cnt + 1;
         q_io_dout          <= d_io_dout;
         program_finish     <= d_program_finish;
       end
@@ -249,6 +249,7 @@ always @*
               d_tx_data = io_din;
               d_wr_en   = 1'b1;
             end
+            // $display("test:", io_din);
             $write("%c", io_din);
           end
           3'h4: begin      // 0x30004 write: indicates program stop
@@ -259,6 +260,7 @@ always @*
             d_state = S_DECODE; 
             d_program_finish = 1'b1;
             $display("IO:Return");
+            $display("cycles_cnt:", q_cpu_cycle_cnt);
             $finish;
           end
         endcase

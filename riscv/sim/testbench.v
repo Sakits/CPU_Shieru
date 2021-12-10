@@ -24,13 +24,14 @@ initial begin
   repeat(50) #1 clk=!clk;
   rst=0; 
   now = 0;
-  repeat(1000) begin
+  forever begin
     #1 clk = !clk;
     now = now + 1;
-    $display(now);
+    // $display(now);
   end
   // forever #1 clk=!clk;
-  $display("finish");
+  $display;
+  $display("finish in ", now, " clocks.");
   $finish;
 end
 

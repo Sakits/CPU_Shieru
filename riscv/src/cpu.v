@@ -104,7 +104,11 @@ wire [31: 0]        DC_jp_pc_ROB;
 
 wire DC_ins_flag_RS;
 
+wire [31: 0]        DC_debug_ins_ROB;
 Decoder Decoder(
+    .debug_ins_ROB(DC_debug_ins_ROB), 
+
+
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
     
     // IF
@@ -135,7 +139,7 @@ Decoder Decoder(
 
     // ROB
     // input
-    .ROB_full(ROB_ROB_full), 
+    .ROB_full(ROB_ROB_full), .LSB_full(LSB_LSB_full), 
     .rs1_ready_ROB(ROB_rs1_ready_ID), .rs2_ready_ROB(ROB_rs2_ready_ID), 
     .reg1_ROB(ROB_reg1_ID), .reg2_ROB(ROB_reg2_ID), 
     // output
@@ -168,6 +172,8 @@ wire [`RLEN]        ROB_new_val;
 wire                ROB_store_flag;
 
 ROB ROB(
+    .debug_ins_ID(DC_debug_ins_ROB), 
+
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
     // IF
@@ -300,6 +306,8 @@ wire                LSB_val_flag_MC;
 wire [ 2: 0]        LSB_insty_MC;
 wire [31: 0]        LSB_addr_out;
 wire [31: 0]        LSB_val_out;
+
+wire                LSB_LSB_full;
 LSB LSB(
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
@@ -314,6 +322,8 @@ LSB LSB(
     .ins_flag(DC_ins_flag_LSB), .insty(DC_insty_LSB), 
     .rs1_ready(DC_rs1_ready_CDB), .rs2_ready(DC_rs2_ready_CDB), 
     .reg1(DC_reg1_CDB), .reg2(DC_reg2_CDB), .imm(DC_imm), 
+    // output
+    .LSB_full(LSB_LSB_full), 
 
     // ROB
     // input

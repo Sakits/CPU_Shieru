@@ -42,20 +42,26 @@ module RegFile (
             
         end
         else begin
+            // for (i = 0; i < 32; i = i + 1)
+                // $write("%h ", reg_val[i][7:0]);
+            // $display;
+            // $display("reg[10]:", "%h", reg_val[10], " %h", reg_state[10]);
+            // $display("reg[11]:", "%h", reg_val[11], " %h", reg_state[11]);
+            // $display("reg[12]:", "%h", reg_val[12], " %h", reg_state[12]);
             if (jp_wrong) begin
                 reg_state <= ~(`null32);
             end
-            else if (upd && upd_rd) begin
-                reg_state[upd_rd] <= `False;
-                ROB_pos[upd_rd] <= upd_idx;
-            end 
-            else if (write && write_rd) begin
-                reg_state[write_rd] <= (ROB_pos[write_rd] == write_idx);
-            end
+            else begin
+                if (write && write_rd) begin
+                    reg_val[write_rd] <= new_val;
+                    reg_state[write_rd] <= (ROB_pos[write_rd] == write_idx && write_rd != upd_rd);
+                end
 
-            if (write && write_rd) begin
-                reg_val[write_rd] <= new_val; 
-            end
+                if (upd && upd_rd) begin
+                    reg_state[upd_rd] <= `False;
+                    ROB_pos[upd_rd] <= upd_idx;
+                end 
+            end 
         end
         
     end
