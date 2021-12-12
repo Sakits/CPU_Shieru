@@ -33,7 +33,6 @@ module ROB (
     input  wire             val_flag_RS,                                // RS 是否发来更新
     input  wire [`RBID]     val_idx_RS,                                 // RS 更新对应 ROB 编号
     input  wire [`RLEN]     val_RS,                                     // RS 更新的值
-    
 
     // LSB
     input  wire             val_flag_LSB,                               // LSB 是否发来更新
@@ -41,7 +40,7 @@ module ROB (
     input  wire [`RLEN]     val_LSB,                                    // LSB 更新的值
     output wire             store_flag                                  // ROB commit，允许 LSB 中第一条 store 指令执行
 );
-    // reg  [31: 0]    debug_ins   [`RBSZ];
+    reg  [31: 0]    debug_ins   [`RBSZ];
 
     reg             full;                                               // ROB 是否已满
 
@@ -57,6 +56,7 @@ module ROB (
 
     reg  [`ILEN]    debug_out;
 
+    // assign ROB_full = full;
     assign ROB_full = ready[front] ? (full && ins_flag)  : (full || (ins_flag && (front == (-(~rear)))));
 
     assign rs1_ready_ID = ready[rs1_idx];
@@ -116,8 +116,8 @@ module ROB (
 
             if (ins_flag) begin
                 rear <= -(~rear);
-                // debug_ins[rear] <= debug_ins_ID;
-                ready[rear] <= (insty == `SB || insty == `SH || insty == `SW || insty == `JAL || insty == `LUI);
+                debug_ins[rear] <= debug_ins_ID;
+                ready[rear] <= (insty == `SB || insty == `SH || insty == `SW || insty == `JAL || insty == `LUI || insty == `AUIPC);
                 // $display("rear:", rear);
                 // $display("jp_flag:", jp_flag);
                 jp_check[rear] <= jp_flag;
@@ -137,6 +137,7 @@ module ROB (
             // $display("store_flag:", store_flag);
 
             debug_out <= ins[front];
+            // $display("jalr_pc:", "%h", val_RS, " jalr_idx:", "%h", jalr_idx, " %h", debug_now);
             if (full || front != rear) begin
                 if (ready[front]) begin
                     front <= -(~front);
@@ -147,14 +148,33 @@ module ROB (
                 else
                     debug_out <= 0;
 
-                if (ins[front] == `JALR || (ins[front][5] && ((ready[front] && jp_check[front]) || (!ready[front] && val_flag_RS && jp_check[front] != val_RS[0])))) begin
-                    if (!ready[front]) begin
-                        debug_cnt <= debug_cnt + 1;
+                if (ins[front] == `JALR) begin
+                    if (ready[front]) begin
+                        jp_wrong <= `True;
+                        jp_pc_IF <= jalr_pc;
+                    end
+                    
+                    if (val_flag_RS && val_idx_RS == front) begin
                         // $display("%h", debug_ins[front]);
                         // $display("%h", debug_now, " %h", debug_ins[front], " ", debug_cnt);
+                        debug_cnt <= debug_cnt + 1;
+                        jp_wrong <= `True;
+                        jp_pc_IF <= val_RS;
                     end
-                    jp_wrong <= `True;
-                    jp_pc_IF <= ins[front] == `JALR ? (ready[front] ? jalr_pc : val_RS) : val[front];
+                end
+                else if (ins[front][5]) begin
+                    if (ready[front] && jp_check[front]) begin
+                        jp_wrong <= `True;
+                        jp_pc_IF <= val[front];
+                    end
+
+                    if (val_flag_RS && val_idx_RS == front && jp_check[front] != val_RS[0]) begin
+                        // $display("%h", debug_ins[front]);
+                        // $display("%h", debug_now, " %h", debug_ins[front], " ", debug_cnt);
+                        debug_cnt <= debug_cnt + 1;
+                        jp_wrong <= `True;
+                        jp_pc_IF <= val[front];
+                    end
                 end
             end
 
@@ -171,7 +191,6 @@ module ROB (
                 
                 if (val_idx_RS == jalr_idx && ins[val_idx_RS] == `JALR) begin
                     jalr_pc <= val_RS;
-                    // $display("jalr_pc:", "%h", val_RS, " jalr_idx:", "%h", jalr_idx);
                 end
             end
 

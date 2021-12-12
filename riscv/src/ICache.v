@@ -22,7 +22,7 @@ module ICache (
     reg  [31: 0]    cache       [`ICSZ];
     reg             cache_hit;
     reg  [31: 0]    hit_ins;
-    reg  [17: 0]    pre_pc;
+    reg  [`ICID]    pre_pc;
 
     wire is_hit = valid[pc[`ICID]] && tag[pc[`ICID]] == pc[`TGID];
 
@@ -43,7 +43,7 @@ module ICache (
 
     reg [31: 0] debug_now;
     always @(posedge clk) begin
-        pre_pc <= pc[17: 0];
+        pre_pc <= pc[`ICID];
         debug_now <= debug_now + 1;
         // $display("IC: ", debug_now);
         if (rst)

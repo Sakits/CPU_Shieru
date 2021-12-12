@@ -18,9 +18,9 @@ module RS (
     input  wire [`RBID]     val_idx_RS,                                 // RS 更新对应 ROB 编号
     input  wire [`RLEN]     val_RS,                                     // RS 更新的值
     output wire             ari_ins_flag,                               // 是否发给 ALU 算术运算
-    output wire [`ILEN]     ari_insty,                                  // 发给 ALU 的算术运算指令
-    output wire [`RLEN]     ari_val1, ari_val2,                         // 发给 ALU 的算术运算值
-    output wire [`RBID]     ari_ROB_idx,                                // 发给 ALU 的算术运算目标 ROB 编号
+    output reg  [`ILEN]     ari_insty,                                  // 发给 ALU 的算术运算指令
+    output reg  [`RLEN]     ari_val1, ari_val2,                         // 发给 ALU 的算术运算值
+    output reg  [`RBID]     ari_ROB_idx,                                // 发给 ALU 的算术运算目标 ROB 编号
     // output reg              cmp_ins_flag,                            // 是否发给 ALU 比较运算
     // output reg  [`ILEN]     cmp_insty,                               // 发给 ALU 的比较运算指令
     // output reg  [`RLEN]     cmp_val1, cmp_val2,                      // 发给 ALU 的比较运算值
@@ -41,61 +41,26 @@ module RS (
     reg             new_rs1_ready, new_rs2_ready;                       // 当前输入指令的 rs1 和 rs2 是否拿到真值
     reg  [`RLEN]    new_reg1, new_reg2;                                 // 当前输入指令的 rs1 和 rs2 的值
 
-    wire [`RSSZ]    idle = (~used) & (-(~used));                        // 最低位未被使用的 RS
-    reg  [`RSID]    idle_pos;                                           
+    wire [`RSSZ]    idle = (~used) & (-(~used));                        // 最低位未被使用的 RS                                     
 
     wire [`RSSZ]    ready_state = used & val1_ready & val2_ready;       // RS 中可以运算的所有位置
     wire [`RSSZ]    ready_pos_lowbit = ready_state & (-ready_state);    // RS 中最低位可以运算的位置
-    reg  [`RSID]    ready_pos;
-
-    reg             pre_ready_pos;
 
     assign ari_ins_flag = ready_pos_lowbit != 0;
-    assign ari_insty = ins[ready_pos];
-    assign ari_val1 = val1[ready_pos];
-    assign ari_val2 = val2[ready_pos];
-    assign ari_ROB_idx = ROB_idx[ready_pos];
 
     always @(*) begin
-        case (ready_pos_lowbit)
-            16'b1000000000000000: ready_pos = 4'd15;
-            16'b0100000000000000: ready_pos = 4'd14;
-            16'b0010000000000000: ready_pos = 4'd13;
-            16'b0001000000000000: ready_pos = 4'd12;
-            16'b0000100000000000: ready_pos = 4'd11;
-            16'b0000010000000000: ready_pos = 4'd10;
-            16'b0000001000000000: ready_pos = 4'd9;
-            16'b0000000100000000: ready_pos = 4'd8;
-            16'b0000000010000000: ready_pos = 4'd7;
-            16'b0000000001000000: ready_pos = 4'd6;
-            16'b0000000000100000: ready_pos = 4'd5;
-            16'b0000000000010000: ready_pos = 4'd4;
-            16'b0000000000001000: ready_pos = 4'd3;
-            16'b0000000000000100: ready_pos = 4'd2;
-            16'b0000000000000010: ready_pos = 4'd1;
-            16'b0000000000000001: ready_pos = 4'd0;
-            default: ready_pos = 4'd0;
-        endcase
-
-        case (idle)
-            16'b1000000000000000: idle_pos = 4'd15;
-            16'b0100000000000000: idle_pos = 4'd14;
-            16'b0010000000000000: idle_pos = 4'd13;
-            16'b0001000000000000: idle_pos = 4'd12;
-            16'b0000100000000000: idle_pos = 4'd11;
-            16'b0000010000000000: idle_pos = 4'd10;
-            16'b0000001000000000: idle_pos = 4'd9;
-            16'b0000000100000000: idle_pos = 4'd8;
-            16'b0000000010000000: idle_pos = 4'd7;
-            16'b0000000001000000: idle_pos = 4'd6;
-            16'b0000000000100000: idle_pos = 4'd5;
-            16'b0000000000010000: idle_pos = 4'd4;
-            16'b0000000000001000: idle_pos = 4'd3;
-            16'b0000000000000100: idle_pos = 4'd2;
-            16'b0000000000000010: idle_pos = 4'd1;
-            16'b0000000000000001: idle_pos = 4'd0;
-            default: idle_pos = 4'd0;
-        endcase
+        ari_insty = `null6;
+        ari_val1 = `null32;
+        ari_val2 = `null32;
+        ari_ROB_idx = 0;
+        for (i = 0; i < `RSSIZE; i = i + 1)
+            if (ready_pos_lowbit[i])
+            begin
+                ari_insty = ins[i];
+                ari_val1 = val1[i];
+                ari_val2 = val2[i];
+                ari_ROB_idx = ROB_idx[i];
+            end
 
         if (!rs1_ready) begin
             if (val_flag_RS && val_idx_RS == reg1[`RBID]) begin
@@ -152,30 +117,35 @@ module RS (
         if (!rst && rdy && !jp_wrong)
         begin
             if (ins_flag) begin
-                used[idle_pos] <= `True;
-                ins[idle_pos] <= insty;
-                ROB_idx[idle_pos] <= new_ROB_idx;
-
-                val1[idle_pos] <= new_reg1;
-                val1_ready[idle_pos] <= new_rs1_ready;
-
-                if (insty == `JALR || (!insty[5] && !insty[0] && insty != `SUB)) begin
-                    val2[idle_pos] <= imm;
-                    val2_ready[idle_pos] <= `True;    
+                for (i = 0; i < `RSSIZE; i = i + 1)
+                if (idle[i])
+                begin
+                    used[i] <= `True;
+                    ins[i] <= insty;
+                    ROB_idx[i] <= new_ROB_idx;
+    
+                    val1[i] <= new_reg1;
+                    val1_ready[i] <= new_rs1_ready;
+    
+                    if (insty == `JALR || (!insty[5] && !insty[0] && insty != `SUB)) begin
+                        val2[i] <= imm;
+                        val2_ready[i] <= `True;    
+                    end
+                    else begin
+                        val2[i] <= new_reg2;
+                        val2_ready[i] <= new_rs2_ready;
+                    end    
                 end
-                else begin
-                    val2[idle_pos] <= new_reg2;
-                    val2_ready[idle_pos] <= new_rs2_ready;
-                end    
             end
 
             if (ready_pos_lowbit) begin
-                used[ready_pos] <= `False;
-                pre_ready_pos <= ready_pos; 
+                for (i = 0; i < `RSSIZE; i = i + 1)
+                    if (ready_pos_lowbit[i])
+                        used[i] <= `False;
             end
 
             for (i = 0; i < `RSSIZE; i = i + 1)
-            begin
+            if (used[i]) begin
                 if (val_flag_RS && !val1_ready[i] && val1[i][`RBID] == val_idx_RS) begin
                     val1_ready[i] <= `True;
                     val1[i] <= val_RS;

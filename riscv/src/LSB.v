@@ -49,6 +49,7 @@ module LSB (
     assign now_addr = val1[front] + val_imm[front];
     assign next_addr = val1[-(~front)] + val_imm[-(~front)];
 
+    // assign LSB_full = full;
     assign LSB_full = val_flag ? (full && ins_flag) : (full || (ins_flag && (front == (-(~rear)))));
 
     assign val_flag_LSB = val_flag && !(ins[front][2] && ins[front][1:0] != 0);
@@ -61,7 +62,7 @@ module LSB (
     assign val_out = val_flag ? val2[-(~front)] : val2[front];
 
     always @(*) begin
-        if (full || front != rear) begin
+        if ((full || front != rear) && val1_ready[front] && val2_ready[front] && rdy) begin
             if (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW) 
                 now_val_flag_MC = iscommit[front];
             else
@@ -70,7 +71,7 @@ module LSB (
         else 
             now_val_flag_MC = `False;
 
-        if ((full || front != rear) && -(~front) != rear) begin
+        if ((full || front != rear) && -(~front) != rear && val1_ready[-(~front)] && val2_ready[-(~front)] && rdy) begin
             if (ins[-(~front)] == `SB || ins[-(~front)] == `SH || ins[-(~front)] == `SW) 
                 next_val_flag_MC = iscommit[-(~front)];
             else
@@ -214,6 +215,7 @@ module LSB (
             end
             
             for (i = 0; i < `LSBSIZE; i = i + 1)
+            if (full || i != rear)
             begin
                 if (val_flag_RS && !val1_ready[i] && val1[i][`RBID] == val_idx_RS) begin
                     val1_ready[i] <= `True;

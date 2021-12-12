@@ -43,7 +43,7 @@ module RegFile (
         end
         else begin
             // for (i = 0; i < 32; i = i + 1)
-                // $write("%h ", reg_val[i][7:0]);
+            //     $write("%h ", reg_val[i]);
             // $display;
             // $display("reg[10]:", "%h", reg_val[10], " %h", reg_state[10]);
             // $display("reg[11]:", "%h", reg_val[11], " %h", reg_state[11]);

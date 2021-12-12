@@ -24,9 +24,10 @@ module IF (
         // $display("%h", ins);
         // $display(pc_out);
         case (ins[6:0])
-            `LUIOP : imm = {ins[31:12], 12'b0};                                 
-            `JALROP: imm = {{20{ins[31]}}, ins[31:20]};
-            `JALOP : imm = {{12{ins[31]}}, ins[19:12], ins[20], ins[30:21]} << 1;
+            `AUIPCOP: imm = {ins[31:12], 12'b0};
+            `LUIOP  : imm = {ins[31:12], 12'b0};                                 
+            `JALROP : imm = {{20{ins[31]}}, ins[31:20]};
+            `JALOP  : imm = {{12{ins[31]}}, ins[19:12], ins[20], ins[30:21]} << 1;
             default: imm = {{20{ins[31]}}, ins[7], ins[31:25], ins[11:8]} << 1;  
         endcase
     end
@@ -43,17 +44,19 @@ module IF (
     assign ins_ID = ins;
 
     // always @(*) begin
-        // $display("imm: ", imm);
-        // $display("ins_flag:", ins_flag);
-        // $display("pc_out:", pc_out);
+    //     $display("pc+imm: ", pc + imm);
+    //     $display("ins_flag:", ins_flag);
+    //     $display("pc_out:", pc_out);
     // end
-    
-    reg  [31: 0] debug_now;
+    reg  [31: 0]    debug_now;
     always @(posedge clk) begin
-        debug_now <= debug_now + 1;
         // $display("IF: ", debug_now);
+        if (rst)
+            debug_now <= `null32;
+        else begin
+            debug_now <= debug_now + 1;
+        end
         if (rst) begin
-            debug_now <= 0;
             pc <= `null32;
         end 
         else if (!rdy) begin

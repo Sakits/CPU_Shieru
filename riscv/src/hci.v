@@ -249,6 +249,7 @@ always @*
               d_tx_data = io_din;
               d_wr_en   = 1'b1;
             end
+            // $display("")
             // $display("test:", io_din);
             $write("%c", io_din);
           end
@@ -259,6 +260,7 @@ always @*
             end
             d_state = S_DECODE; 
             d_program_finish = 1'b1;
+            // $display("io_sel:", d_wr_en);
             $display("IO:Return");
             $display("cycles_cnt:", q_cpu_cycle_cnt);
             $finish;

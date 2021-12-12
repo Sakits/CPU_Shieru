@@ -41,49 +41,12 @@ wire [31: 0]        IF_ins_ID, IF_jp_pc_ID;
 wire [31: 0]        IF_pc_out;
 wire                IF_is_stall_IC;
 
-IF IF(
-    // input
-    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong), .jp_pc(ROB_jp_pc_IF), 
-
-    // Decoder
-    // input
-    .stall_ID(DC_stall_IF), 
-    // output
-    .ins_flag_ID(IF_ins_flag_ID), .jp_flag_ID(IF_jp_flag_ID), 
-    .ins_ID(IF_ins_ID), .jp_pc_ID(IF_jp_pc_ID), 
-
-    // ICache
-    // input
-    .ins_flag(IC_ins_flag_IF), .ins(IC_ins_IF), 
-    // output
-    .pc_out(IF_pc_out), 
-    .is_stall_IC(IF_is_stall_IC)
-);
-
 wire                IC_ins_flag_IF;
 wire [31: 0]        IC_ins_IF;
 
 wire                IC_ins_flag_MC;
 wire [31: 0]        IC_pc_MC;
 
-ICache ICache(
-    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
-
-    // IF
-    // input
-    .pc(IF_pc_out), 
-    .is_stall(IF_is_stall_IC), 
-    // output
-    .ins_flag_IF(IC_ins_flag_IF), 
-    .ins_IF(IC_ins_IF), 
-
-    // MemCtrl
-    // input
-    .ins_flag(MC_val_out_flag_IC), .ins(MC_val_out_IC), 
-    // output
-    .ins_flag_MC(IC_ins_flag_MC), 
-    .pc_MC(IC_pc_MC)
-);
 
 wire                DC_stall_IF;
 
@@ -105,6 +68,100 @@ wire [31: 0]        DC_jp_pc_ROB;
 wire DC_ins_flag_RS;
 
 wire [31: 0]        DC_debug_ins_ROB;
+
+wire                ROB_jp_wrong;
+
+wire [`RLEN]        ROB_jp_pc_IF;
+
+wire [`RBID]        ROB_front, ROB_rear;
+
+wire                ROB_ROB_full, ROB_rs1_ready_ID, ROB_rs2_ready_ID;
+wire [`RLEN]        ROB_reg1_ID, ROB_reg2_ID;
+
+wire                ROB_upd_flag;
+wire [`RBID]        ROB_upd_idx;
+wire [`RIDX]        ROB_upd_rd;
+wire                ROB_write_flag;
+wire [`RBID]        ROB_write_idx;
+wire [`RIDX]        ROB_write_rd;
+wire [`RLEN]        ROB_new_val;
+
+wire                ROB_store_flag;
+
+wire                RF_reg1_flag_ID, RF_reg2_flag_ID;
+wire [31: 0]        RF_reg1_ID, RF_reg2_ID;
+
+wire [ 3: 0]        RF_rs1_pos, RF_rs2_pos;
+
+wire                RS_ari_ins_flag; 
+wire [`ILEN]        RS_ari_insty;
+wire [`RLEN]        RS_ari_val1, RS_ari_val2;
+wire [`RBID]        RS_ari_ROB_idx;
+
+wire                ALU_val_flag;
+wire [`RBID]        ALU_val_idx;
+wire [`RLEN]        ALU_val; 
+
+wire                LSB_val_flag_LSB; 
+wire [`RBID]        LSB_val_idx_LSB; 
+wire [`RLEN]        LSB_val_LSB;
+
+wire                LSB_val_flag_MC;
+wire [ 2: 0]        LSB_insty_MC;
+wire [31: 0]        LSB_addr_out;
+wire [31: 0]        LSB_val_out;
+
+wire                LSB_LSB_full;
+
+
+wire                MC_val_out_flag_IC;
+wire [31: 0]        MC_val_out_IC; 
+
+wire                MC_val_out_flag_LSB;
+wire [31: 0]        MC_val_out_LSB;
+
+wire [ 7: 0]        MC_mem_dout;
+wire [31: 0]        MC_mem_a;
+wire                MC_mem_wr;
+
+IF IF(
+    // input
+    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong), .jp_pc(ROB_jp_pc_IF), 
+
+    // Decoder
+    // input
+    .stall_ID(DC_stall_IF), 
+    // output
+    .ins_flag_ID(IF_ins_flag_ID), .jp_flag_ID(IF_jp_flag_ID), 
+    .ins_ID(IF_ins_ID), .jp_pc_ID(IF_jp_pc_ID), 
+
+    // ICache
+    // input
+    .ins_flag(IC_ins_flag_IF), .ins(IC_ins_IF), 
+    // output
+    .pc_out(IF_pc_out), 
+    .is_stall_IC(IF_is_stall_IC)
+);
+
+ICache ICache(
+    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
+
+    // IF
+    // input
+    .pc(IF_pc_out), 
+    .is_stall(IF_is_stall_IC), 
+    // output
+    .ins_flag_IF(IC_ins_flag_IF), 
+    .ins_IF(IC_ins_IF), 
+
+    // MemCtrl
+    // input
+    .ins_flag(MC_val_out_flag_IC), .ins(MC_val_out_IC), 
+    // output
+    .ins_flag_MC(IC_ins_flag_MC), 
+    .pc_MC(IC_pc_MC)
+);
+
 Decoder Decoder(
     .debug_ins_ROB(DC_debug_ins_ROB), 
 
@@ -152,25 +209,6 @@ Decoder Decoder(
     .ins_flag_RS(DC_ins_flag_RS)
 );
 
-wire                ROB_jp_wrong;
-
-wire [`RLEN]        ROB_jp_pc_IF;
-
-wire [`RBID]        ROB_front, ROB_rear;
-
-wire                ROB_ROB_full, ROB_rs1_ready_ID, ROB_rs2_ready_ID;
-wire [`RLEN]        ROB_reg1_ID, ROB_reg2_ID;
-
-wire                ROB_upd_flag;
-wire [`RBID]        ROB_upd_idx;
-wire [`RIDX]        ROB_upd_rd;
-wire                ROB_write_flag;
-wire [`RBID]        ROB_write_idx;
-wire [`RIDX]        ROB_write_rd;
-wire [`RLEN]        ROB_new_val;
-
-wire                ROB_store_flag;
-
 ROB ROB(
     .debug_ins_ID(DC_debug_ins_ROB), 
 
@@ -216,10 +254,6 @@ ROB ROB(
     .store_flag(ROB_store_flag)
 );
 
-wire                RF_reg1_flag_ID, RF_reg2_flag_ID;
-wire [31: 0]        RF_reg1_ID, RF_reg2_ID;
-
-wire [ 3: 0]        RF_rs1_pos, RF_rs2_pos;
 RegFile RegFile(
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
@@ -240,10 +274,6 @@ RegFile RegFile(
     .rs1_pos(RF_rs1_pos), .rs2_pos(RF_rs2_pos)
 );
 
-wire                RS_ari_ins_flag; 
-wire [`ILEN]        RS_ari_insty;
-wire [`RLEN]        RS_ari_val1, RS_ari_val2;
-wire [`RBID]        RS_ari_ROB_idx;
 RS RS(
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
@@ -279,9 +309,6 @@ RS RS(
     .val_LSB(LSB_val_LSB) 
 );
 
-wire                ALU_val_flag;
-wire [`RBID]        ALU_val_idx;
-wire [`RLEN]        ALU_val; 
 ALU ALU(
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
@@ -298,16 +325,6 @@ ALU ALU(
     .ROB_idx(RS_ari_ROB_idx)
 );
 
-wire                LSB_val_flag_LSB; 
-wire [`RBID]        LSB_val_idx_LSB; 
-wire [`RLEN]        LSB_val_LSB;
-
-wire                LSB_val_flag_MC;
-wire [ 2: 0]        LSB_insty_MC;
-wire [31: 0]        LSB_addr_out;
-wire [31: 0]        LSB_val_out;
-
-wire                LSB_LSB_full;
 LSB LSB(
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
@@ -347,15 +364,6 @@ LSB LSB(
     .val_out(LSB_val_out)
 );
 
-wire                MC_val_out_flag_IC;
-wire [31: 0]        MC_val_out_IC; 
-
-wire                MC_val_out_flag_LSB;
-wire [31: 0]        MC_val_out_LSB;
-
-wire [ 7: 0]        MC_mem_dout;
-wire [31: 0]        MC_mem_a;
-wire                MC_mem_wr;
 MemCtrl MemCtrl(
     .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
 
