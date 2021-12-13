@@ -35,7 +35,8 @@ module LSB (
     output wire [31: 0]      val_out 
 );
 
-    reg  [`LSID]    full, front, rear, commit_cnt;
+    reg             full;
+    reg  [`LSID]    front, rear, commit_cnt;
 
     reg  [ 2: 0]    ins         [`LSSZ];
     reg  [`LSSZ]    val1_ready, val2_ready, iscommit;
@@ -66,7 +67,7 @@ module LSB (
             if (ins[front] == `SB || ins[front] == `SH || ins[front] == `SW) 
                 now_val_flag_MC = iscommit[front];
             else
-                now_val_flag_MC = (now_addr[17:16] == 2'b11) ? (ROB_idx[front] == ROB_front) : `True;
+                now_val_flag_MC = (now_addr[17:16] == 2'b11) ? (ROB_idx[front] == ROB_front && !jp_wrong) : `True;
         end
         else 
             now_val_flag_MC = `False;
@@ -75,7 +76,7 @@ module LSB (
             if (ins[-(~front)] == `SB || ins[-(~front)] == `SH || ins[-(~front)] == `SW) 
                 next_val_flag_MC = iscommit[-(~front)];
             else
-                next_val_flag_MC = (next_addr[17:16] == 2'b11) ? (ROB_idx[-(~front)] == ROB_front) : `True;
+                next_val_flag_MC = (next_addr[17:16] == 2'b11) ? (ROB_idx[-(~front)] == ROB_front && !jp_wrong) : `True;
         end
         else 
             next_val_flag_MC = `False;

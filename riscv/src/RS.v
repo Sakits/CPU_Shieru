@@ -17,18 +17,17 @@ module RS (
     input  wire             val_flag_RS,                                // RS 是否发来更新
     input  wire [`RBID]     val_idx_RS,                                 // RS 更新对应 ROB 编号
     input  wire [`RLEN]     val_RS,                                     // RS 更新的值
-    output wire             ari_ins_flag,                               // 是否发给 ALU 算术运算
-    output reg  [`ILEN]     ari_insty,                                  // 发给 ALU 的算术运算指令
-    output reg  [`RLEN]     ari_val1, ari_val2,                         // 发给 ALU 的算术运算值
-    output reg  [`RBID]     ari_ROB_idx,                                // 发给 ALU 的算术运算目标 ROB 编号
-    // output reg              cmp_ins_flag,                            // 是否发给 ALU 比较运算
-    // output reg  [`ILEN]     cmp_insty,                               // 发给 ALU 的比较运算指令
-    // output reg  [`RLEN]     cmp_val1, cmp_val2,                      // 发给 ALU 的比较运算值
 
     // LSB
     input  wire             val_flag_LSB,                               // LSB 是否发来更新
     input  wire [`RBID]     val_idx_LSB,                                // LSB 更新对应 ROB 编号
-    input  wire [`RLEN]     val_LSB                                     // LSB 更新的值
+    input  wire [`RLEN]     val_LSB,                                     // LSB 更新的值
+
+    // CDB
+    output reg              val_flag,                                   // 是否发送给 CDB
+    output reg  [`RBID]     val_idx,                                    // ROB 编号
+    output reg  [`RLEN]     val                                         // 发送的值
+
 );
     reg  [`ILEN]    ins             [`RSSZ];                            // RS 中保存的指令
     reg  [`RSSZ]    used;                                               // RS 的使用状态
@@ -46,6 +45,14 @@ module RS (
     wire [`RSSZ]    ready_state = used & val1_ready & val2_ready;       // RS 中可以运算的所有位置
     wire [`RSSZ]    ready_pos_lowbit = ready_state & (-ready_state);    // RS 中最低位可以运算的位置
 
+    // ALU
+    wire             ari_ins_flag;                                      // ALU 是否发来算术指令
+    reg  [`ILEN]     ari_insty;                                         // 指令
+    reg  [`RLEN]     ari_val1, ari_val2;                                // 需要进行运算的值
+    reg  [`RBID]     ari_ROB_idx;                                       // 目标 ROB 编号                
+    // output reg              cmp_ins_flag,                            // 是否发给 ALU 比较运算
+    // output reg  [`ILEN]     cmp_insty,                               // 发给 ALU 的比较运算指令
+    // output reg  [`RLEN]     cmp_val1, cmp_val2,                      // 发给 ALU 的比较运算值
     assign ari_ins_flag = ready_pos_lowbit != 0;
 
     always @(*) begin
@@ -164,6 +171,48 @@ module RS (
                     val2[i] <= val_LSB;
                 end
             end
+        end
+    end
+
+    // ALU
+    always @(*) begin
+        if (ari_ins_flag) begin
+            val_flag = `True;
+            val_idx = ari_ROB_idx;
+            case (ari_insty)
+                `ADD   : val = ari_val1 + ari_val2;
+                `ADDI  : val = ari_val1 + ari_val2;
+                `SUB   : val = ari_val1 - ari_val2;
+                `XOR   : val = ari_val1 ^ ari_val2;
+                `XORI  : val = ari_val1 ^ ari_val2;
+                `OR    : val = ari_val1 | ari_val2;
+                `ORI   : val = ari_val1 | ari_val2;
+                `AND   : val = ari_val1 & ari_val2;
+                `ANDI  : val = ari_val1 & ari_val2;
+                `SLL   : val = ari_val1 << ari_val2[4:0];
+                `SLLI  : val = ari_val1 << ari_val2[4:0];
+                `SRL   : val = ari_val1 >> ari_val2[4:0];
+                `SRLI  : val = ari_val1 >> ari_val2[4:0];
+                `SRA   : val = $signed(ari_val1) >> ari_val2[4:0];
+                `SRAI  : val = $signed(ari_val1) >> ari_val2[4:0];
+                `SLT   : val = $signed(ari_val1) < $signed(ari_val2);
+                `SLTI  : val = $signed(ari_val1) < $signed(ari_val2);
+                `SLTU  : val = ari_val1 < ari_val2;
+                `SLTIU : val = ari_val1 < ari_val2;
+                `BEQ   : val = ari_val1 == ari_val2;
+                `BNE   : val = ari_val1 != ari_val2;
+                `BLT   : val = $signed(ari_val1) < $signed(ari_val2);
+                `BGE   : val = $signed(ari_val1) >= $signed(ari_val2);
+                `BLTU  : val = ari_val1 < ari_val2;
+                `BGEU  : val = ari_val1 >= ari_val2;
+                `JALR  : val = (ari_val1 + ari_val2) & ~(32'b1);
+                default: val = `null32;
+            endcase
+        end
+        else begin
+            val_flag = `False;
+            val_idx = `null4;
+            val = `null32;
         end
     end
 endmodule

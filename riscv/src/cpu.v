@@ -93,11 +93,6 @@ wire [31: 0]        RF_reg1_ID, RF_reg2_ID;
 
 wire [ 3: 0]        RF_rs1_pos, RF_rs2_pos;
 
-wire                RS_ari_ins_flag; 
-wire [`ILEN]        RS_ari_insty;
-wire [`RLEN]        RS_ari_val1, RS_ari_val2;
-wire [`RBID]        RS_ari_ROB_idx;
-
 wire                ALU_val_flag;
 wire [`RBID]        ALU_val_idx;
 wire [`RLEN]        ALU_val; 
@@ -294,36 +289,18 @@ RS RS(
     .val_flag_RS(ALU_val_flag), 
     .val_idx_RS(ALU_val_idx), 
     .val_RS(ALU_val), 
-    // output
-    .ari_ins_flag(RS_ari_ins_flag), 
-    .ari_insty(RS_ari_insty), 
-    .ari_val1(RS_ari_val1), .ari_val2(RS_ari_val2), 
-    .ari_ROB_idx(RS_ari_ROB_idx), 
-    // output reg              cmp_ins_flag,                            // 是否发给 ALU 比较运算
-    // output reg  [`ILEN]     cmp_insty,                               // 发给 ALU 的比较运算指令
-    // output reg  [`RLEN]     cmp_val1, cmp_val2,                      // 发给 ALU 的比较运算值
 
     // LSB
     // input
     .val_flag_LSB(LSB_val_flag_LSB), 
     .val_idx_LSB(LSB_val_idx_LSB), 
-    .val_LSB(LSB_val_LSB) 
-);
-
-ALU ALU(
-    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong),
+    .val_LSB(LSB_val_LSB),  
 
     // CDB
     // output
     .val_flag(ALU_val_flag), 
     .val_idx(ALU_val_idx), 
-    .val(ALU_val), 
-
-    // RS
-    // input
-    .ins_flag(RS_ari_ins_flag), .insty(RS_ari_insty), 
-    .val1(RS_ari_val1), .val2(RS_ari_val2), 
-    .ROB_idx(RS_ari_ROB_idx)
+    .val(ALU_val) 
 );
 
 LSB LSB(

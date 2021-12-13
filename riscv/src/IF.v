@@ -95,14 +95,14 @@ module IF (
     //     $display("ins_flag:", ins_flag);
     //     $display("pc_out:", pc_out);
     // end
-    reg  [31: 0]    debug_now, right_cnt, failed_cnt;
+    reg  [31: 0]    debug_now;//, right_cnt, failed_cnt;
 
     integer i;
     always @(posedge clk) begin
         // $display("IF: ", ins_flag, " ", stall_ID);
         if (rst) begin
-            right_cnt <= 0;
-            failed_cnt <= 0; 
+            // right_cnt <= 0;
+            // failed_cnt <= 0; 
             debug_now <= `null32;
         end
         else begin
@@ -122,7 +122,7 @@ module IF (
             pc <= jp_pc; 
 
             if (jp_commit) begin
-                failed_cnt <= failed_cnt + 1;
+                // failed_cnt <= failed_cnt + 1;
                 case (BHB[jp_queue[front]])
                     2'b00 : BHB[jp_queue[front]] <= 2'b01;
                     2'b01 : BHB[jp_queue[front]] <= 2'b10;
@@ -159,8 +159,8 @@ module IF (
         end
 
         if (!rst && rdy && !jp_wrong && jp_commit) begin
-            right_cnt <= right_cnt + 1;
-            $display("right: ", right_cnt, " failed: ", failed_cnt);
+            // right_cnt <= right_cnt + 1;
+            // $display("right: ", right_cnt, " failed: ", failed_cnt);
             front <= -(~front);
             case (BHB[jp_queue[front]])
                 2'b01 : BHB[jp_queue[front]] <= 2'b00;
