@@ -1,74 +1,35 @@
-# CPU Design Draft
-## 一些改进
+# CPU_Shieru
 
-   
-1. 算术指令和比较指令都可能等待寄存器，但他们利用的是不同的单元，一个用加法器一个用比较器，所以每次并行地把 RS 里 READY 的算数指令和比较指令各取一条出来执行，这并不冲突
+> SJTU ACM Class Architecture 2021 ( MS108 Course Project ) Assignment
 
-2. ROB 里的 val 对于 Branch 指令存预测反向要跳到的地方，对于算数指令存要放到 rd 里的值
+A toy but high performance RISC-V CPU.
 
-   对于 `jal` 指令，一定跳对了，所以只要存 pc + 4 等着写回 rd 就好了
+![](https://img.shields.io/badge/Language-Verilog-blue) ![](https://img.shields.io/badge/Run%20on-XC7A35T--ICPG236C%20FPGA%20Board-ff69b4) ![](https://img.shields.io/badge/all%20testcases-passed-brightgreen)
 
-   对于 `jalr` 指令，一定跳错了，所以 ROB 里只需要记录最旧的那一个 `jalr` 的 pc，commit 的时候发给 IF 跳转
+## Intro
 
-   优点：
-   1. 经过测试 32 位整数十分消耗资源，这样可以极大剩下空间并且不影响性能
+- Maybe one of the Top Performance CPU in ACM Class 2020.
+- Able to operate correctly under 120 MHz frequency ( passed all testcases ).
+- Not much resources consumed ( 59% LUT ).
 
-3. 每次找空着的位置或者已经 ready 的位置可以利用 lowbit + 查找表 快速得到
-4. 每个模块每次都会综合这个周期收进来的消息去向外发信息，不会导致收进来的信息延迟一个周期后才发出去
-5. 如果一个模块向另一个模块请求信息，若能在周期内回来，那么没事，如果在一个周期后才能回来，需要预保留下一次要询问的，本次询问的是当前询问的还是下次要询问的取决于这个周期是否收到信息。
-6. 调完了记得各个分支里删掉不需要的那些，可以减少资源使用
+## Architecture
+ - [x] Out-of-order execution by Tomasulo Algorithm.
+ - [x] 16 entries RS, 16 entries LSB and 16 entries ROB.
+ - [x] Branch Prediction with 512 entries Branch History Buffer.
+ - [x] 512 entries Direct-Mapped I-Cache.
+ - [ ] Double Issue.
 
-## InstFetch
+## Performance
 
-两位饱和计数器分支预测 BHB
 
-## ICache
+| Testcase | Time (100Mhz) | Time (120 Mhz) |
+|:--:|:--:|:--:|
+| heart | 310.34s | 265.08s |
+| qsort | 6.48s | 5.39s |
+| queens | 3.15s | 2.60s |
+| hanoi | 3.47s | 2.90s |
+| bulgarian | 1.65s | 1.30s |
+| pi | 1.32s | 1.15s |
 
-普普通通
+**Higher frequency waiting for testing**.
 
-## Decoder
-
-5 位指令类型 insty （指令类型 37 种，把 Load 和 Store 都只当成一种，load 的 rs2 中放长度，store 的 rd 中放长度，剩 31 种，其中 0 代表无指令）
-
-## RegFile
-~~存两排 32 个 32 位寄存器~~
-
-~~其中一排存的是 ROB 中的最新值，这样 ROB 里就不需要存了~~
-
-PS:找到了更省空间的方法
-
-## ROB
-
-只存放指令类型和 rd 位置
-
-只存一个 jalr 的最早的那个 pc，因为一定会跳转清空
-
-维护一个循环队列，`front` 和 `rear`，`rear + 1` 可以用 `-(~rear)` 替代*
-
-## RS
-算数计算和比较计算并行执行，每次取算数和比较各取一个 ready 的执行
-
-每次使用 lowbit 找到第一个 ready 的数
-
-算术计算：
-
-1 位 flag 表示是否有效
-
-4 位 ROB 索引，表示 RS 需要存入的寄存器对应 ROB 位置 
-
-32 位寄存器的值，表示 RS 需要存入的寄存器的值
-
-比较计算：
-
-1 位 flag 表示是否有效
-
-4 位 ROB 索引，表示 RS 需要存入的寄存器对应 ROB 位置
-
-1 位表示比较的答案
-
-## LSB
-时序
-
-IO 口发出请求后 stall 一个周期
-
-非 IO 口不 stall，持续进行
