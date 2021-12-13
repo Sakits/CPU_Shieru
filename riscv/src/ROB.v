@@ -6,6 +6,7 @@ module ROB (
 
     // InstFetch
     output reg  [`RLEN]     jp_pc_IF,                                   // 正确跳转到的 pc
+    output reg              jp_commit, 
 
     // CDB
     output reg  [`RBID]     front, rear,                                // ROB 的头尾
@@ -83,7 +84,7 @@ module ROB (
 
     integer i;
 
-    reg    [31: 0]  debug_cnt;
+    reg [31: 0]  debug_cnt;
     reg [31: 0] debug_now;
     always @(posedge clk) begin
         debug_now <= debug_now + 1;
@@ -95,6 +96,7 @@ module ROB (
 
         if (rst || jp_wrong) begin
             jp_wrong <= `False;
+            jp_commit <= `False;
             jp_pc_IF <= `null32;
 
             full <= `False;
@@ -145,10 +147,10 @@ module ROB (
                     // $display("%h", debug_now, " %h", debug_ins[front], " ", debug_cnt);
                     debug_cnt <= debug_cnt + 1;
                 end
-                else
-                    debug_out <= 0;
 
                 if (ins[front] == `JALR) begin
+                    jp_commit <= `False;
+
                     if (ready[front]) begin
                         jp_wrong <= `True;
                         jp_pc_IF <= jalr_pc;
@@ -162,7 +164,9 @@ module ROB (
                         jp_pc_IF <= val_RS;
                     end
                 end
-                else if (ins[front][5]) begin
+                else if (ins[front][5] && ins[front] != `JAL) begin
+                    jp_commit <= ready[front] || (val_flag_RS && val_idx_RS == front && jp_check[front] != val_RS[0]);
+
                     if (ready[front] && jp_check[front]) begin
                         jp_wrong <= `True;
                         jp_pc_IF <= val[front];
@@ -176,6 +180,12 @@ module ROB (
                         jp_pc_IF <= val[front];
                     end
                 end
+                else begin
+                    jp_commit <= `False;
+                end
+            end
+            else begin
+                jp_commit <= `False;
             end
 
             if (val_flag_RS) begin

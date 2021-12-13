@@ -49,9 +49,12 @@
 `define JALROP      7'd103
 `define LUIOP       7'd55
 `define AUIPCOP     7'd23
+`define BRANCHOP    7'd99
 `define RSSIZE      16                                                  // RS 的大小
 `define LSBSIZE     16                                                  // LSB 的大小
 `define ROBSIZE     16                                                  // ROB 的大小
+`define ICSZ        1024                                                // ICache 大小
+`define BHBSZ       2048                                                // BHB 大小
 `define RSSZ        15: 0                                               // RS 的数组大小
 `define RSID         3: 0                                               // RS 下标大小
 `define RBSZ        15: 0                                               // ROB 的数组大小
@@ -61,6 +64,6 @@
 `define RLEN        31: 0                                               // 寄存器和 pc 的长度
 `define RIDX         4: 0                                               // 32 个寄存器的下标
 `define ILEN         5: 0                                               // 指令长度
-`define ICSZ      1023: 0                                               // ICache 大小
 `define ICID        11: 2                                               // ICache index 位置
 `define TGID        17:12                                               // ICache tag   位置
+`define BHBID       12: 2                                               // BHB index 位置

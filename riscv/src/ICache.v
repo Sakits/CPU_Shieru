@@ -6,9 +6,8 @@ module ICache (
 
     // IF
     input  wire [31: 0]     pc, 
-    input  wire             is_stall, 
-    output wire             ins_flag_IF, 
-    output wire [31: 0]     ins_IF, 
+    output reg              ins_flag_IF, 
+    output reg  [31: 0]     ins_IF, 
 
     // MemCtrl
     input  wire             ins_flag, 
@@ -17,21 +16,13 @@ module ICache (
     output wire [31: 0]     pc_MC
 );
 
-    reg  [`ICSZ]    valid;
-    reg  [`TGID]    tag         [`ICSZ];
-    reg  [31: 0]    cache       [`ICSZ];
-    reg             cache_hit;
-    reg  [31: 0]    hit_ins;
-    reg  [`ICID]    pre_pc;
+    reg  [`ICSZ - 1: 0]         valid;
+    reg  [`TGID]    tag         [`ICSZ - 1: 0];
+    reg  [31: 0]    cache       [`ICSZ - 1: 0];
 
     wire is_hit = valid[pc[`ICID]] && tag[pc[`ICID]] == pc[`TGID];
-
-    assign ins_flag_IF = ins_flag ? `True : cache_hit; 
-    assign ins_IF = ins_flag ? ins : hit_ins;
-
-    assign ins_flag_MC = !is_stall && !is_hit;
+    assign ins_flag_MC = !is_hit && !ins_flag;
     assign pc_MC = pc;
-    
 
     // always @(*) begin
         // $display("pc: ", "%h", pc);
@@ -43,30 +34,35 @@ module ICache (
 
     reg [31: 0] debug_now;
     always @(posedge clk) begin
-        pre_pc <= pc[`ICID];
         debug_now <= debug_now + 1;
         // $display("IC: ", debug_now);
         if (rst)
             debug_now <= 0;
         if (rst) begin
             valid <= 0;
-            cache_hit <= `False;
+            ins_flag_IF <= `False;
         end
         else if (!rdy) begin
             
         end
         else begin
-            if (is_hit && !is_stall) begin
-                cache_hit <= !jp_wrong;
-                hit_ins <= cache[pc[`ICID]];
+            if (!jp_wrong) begin
+                if (is_hit) begin
+                    ins_flag_IF <= `True;
+                    ins_IF <= cache[pc[`ICID]];
+                end
+                else begin
+                    ins_flag_IF <= ins_flag;
+                    ins_IF <= ins; 
+                end
             end
             else
-                cache_hit <= `False;
+                ins_flag_IF <= `False;
 
             if (ins_flag) begin
-                valid[pre_pc[`ICID]] <= `True;
-                cache[pre_pc[`ICID]] <= ins;
-                tag[pre_pc[`ICID]] <= pc[`TGID];
+                valid[pc[`ICID]] <= `True;
+                cache[pc[`ICID]] <= ins;
+                tag[pc[`ICID]] <= pc[`TGID];
             end
         end
     end

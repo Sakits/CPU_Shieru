@@ -69,7 +69,7 @@ wire DC_ins_flag_RS;
 
 wire [31: 0]        DC_debug_ins_ROB;
 
-wire                ROB_jp_wrong;
+wire                ROB_jp_wrong, ROB_jp_commit;
 
 wire [`RLEN]        ROB_jp_pc_IF;
 
@@ -126,7 +126,8 @@ wire                MC_mem_wr;
 
 IF IF(
     // input
-    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), .jp_wrong(ROB_jp_wrong), .jp_pc(ROB_jp_pc_IF), 
+    .clk(clk_in), .rst(rst_in), .rdy(rdy_in), 
+    .jp_wrong(ROB_jp_wrong), .jp_pc(ROB_jp_pc_IF), .jp_commit(ROB_jp_commit), 
 
     // Decoder
     // input
@@ -139,8 +140,8 @@ IF IF(
     // input
     .ins_flag(IC_ins_flag_IF), .ins(IC_ins_IF), 
     // output
-    .pc_out(IF_pc_out), 
-    .is_stall_IC(IF_is_stall_IC)
+    .pc_out(IF_pc_out)
+    // .is_stall_IC(IF_is_stall_IC)
 );
 
 ICache ICache(
@@ -149,7 +150,7 @@ ICache ICache(
     // IF
     // input
     .pc(IF_pc_out), 
-    .is_stall(IF_is_stall_IC), 
+    // .is_stall(IF_is_stall_IC), 
     // output
     .ins_flag_IF(IC_ins_flag_IF), 
     .ins_IF(IC_ins_IF), 
@@ -216,7 +217,7 @@ ROB ROB(
 
     // IF
     // output
-    .jp_pc_IF(ROB_jp_pc_IF),
+    .jp_pc_IF(ROB_jp_pc_IF), .jp_commit(ROB_jp_commit), 
 
     // CDB
     // output
