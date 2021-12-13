@@ -1,6 +1,6 @@
 # CPU_Shieru
 
-> SJTU ACM Class Architecture 2021 ( MS108 Course Project ) Assignment
+> SJTU ACM Class Architecture 2021 Assignment ( MS108 Course Project )
 
 A toy but high performance RISC-V CPU.
 
