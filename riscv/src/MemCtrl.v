@@ -134,36 +134,43 @@ module MemCtrl (
 
                 if (!IO_need_Stall || !is_IO)
                 begin
-                    IO_need_Stall <= `True;
                     case (insty_LSB)
                         `LB: begin
                             val_out_flag_LSB <= `True;
+                            IO_need_Stall <= `True;
                         end 
                         `LH: begin
                             val_out_flag_LSB <= step_LSB[0] == 1'b1;
                             step_LSB[0] <= -(~step_LSB[0]);
+                            IO_need_Stall <= `True;
                         end
                         `LW: begin
                             val_out_flag_LSB <= step_LSB == 2'b11;
                             step_LSB <= -(~step_LSB);
+                            IO_need_Stall <= `True;
                         end
                         `LBU: begin
                             val_out_flag_LSB <= `True;
+                            IO_need_Stall <= `True;
                         end
                         `LHU: begin
                             val_out_flag_LSB <= step_LSB[0] == 1'b1;
                             step_LSB[0] <= -(~step_LSB[0]);
+                            IO_need_Stall <= `True;
                         end
                         `SB: begin
                             val_out_flag_LSB <= `True;
+                            IO_need_Stall <= `False;
                         end
                         `SH: begin
                             val_out_flag_LSB <= step_LSB[0] == 1'b1;
                             step_LSB[0] <= -(~step_LSB[0]);
+                            IO_need_Stall <= `False;
                         end
                         `SW: begin
                             val_out_flag_LSB <= step_LSB == 2'b11;
                             step_LSB <= -(~step_LSB);
+                            IO_need_Stall <= `False;
                         end
                     endcase
                 end
