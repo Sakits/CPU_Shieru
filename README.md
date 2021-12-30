@@ -25,6 +25,7 @@ A toy but high performance RISC-V CPU.
  - **Finding Idle Position by Lowbit**, which can find the first free position in RS very quickly
  - **Well-designed Microinstruction Set**, which can quickly determine the type of instruction by specific binary bits
  - **Branch Prediction Queue in IF**, ROB only needs to pass whether jump or not to IF, and does not need to pass the `pc` of the control instruction, reducing ROB space and required bandwidth
+ 
 
 ## Performance
 
