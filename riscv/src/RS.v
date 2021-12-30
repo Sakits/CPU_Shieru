@@ -50,9 +50,6 @@ module RS (
     reg  [`ILEN]     ari_insty;                                         // 指令
     reg  [`RLEN]     ari_val1, ari_val2;                                // 需要进行运算的值
     reg  [`RBID]     ari_ROB_idx;                                       // 目标 ROB 编号                
-    // output reg              cmp_ins_flag,                            // 是否发给 ALU 比较运算
-    // output reg  [`ILEN]     cmp_insty,                               // 发给 ALU 的比较运算指令
-    // output reg  [`RLEN]     cmp_val1, cmp_val2,                      // 发给 ALU 的比较运算值
     assign ari_ins_flag = ready_pos_lowbit != 0;
 
     always @(*) begin

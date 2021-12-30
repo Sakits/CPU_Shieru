@@ -37,7 +37,7 @@ module MemCtrl (
         if (rdy) begin
             mem_wr = `False;
             if (val_in_flag_LSB) begin
-                if (is_IO && IO_need_Stall) begin
+                if (is_IO && (IO_need_Stall || io_buffer_full)) begin
                     mem_a = `null32;
                     mem_dout = `null8;
                     mem_wr = `False;
@@ -65,6 +65,8 @@ module MemCtrl (
                 mem_dout = `null8;
                 mem_wr = `False;
             end
+
+            // $display(mem_wr, " ", mem_dout);
         end
         else begin
             mem_a = 0;
@@ -132,7 +134,7 @@ module MemCtrl (
                     2'b11: val_LSB[23:16] <= mem_din;
                 endcase
 
-                if (!IO_need_Stall || !is_IO)
+                if ((!IO_need_Stall && !io_buffer_full) || !is_IO)
                 begin
                     case (insty_LSB)
                         `LB: begin
@@ -160,17 +162,20 @@ module MemCtrl (
                         end
                         `SB: begin
                             val_out_flag_LSB <= `True;
-                            IO_need_Stall <= `False;
+                            IO_need_Stall <= `True;
+                            // IO_need_Stall <= `False;
                         end
                         `SH: begin
                             val_out_flag_LSB <= step_LSB[0] == 1'b1;
                             step_LSB[0] <= -(~step_LSB[0]);
-                            IO_need_Stall <= `False;
+                            IO_need_Stall <= `True;
+                            // IO_need_Stall <= `False;
                         end
                         `SW: begin
                             val_out_flag_LSB <= step_LSB == 2'b11;
                             step_LSB <= -(~step_LSB);
-                            IO_need_Stall <= `False;
+                            IO_need_Stall <= `True;
+                            // IO_need_Stall <= `False;
                         end
                     endcase
                 end

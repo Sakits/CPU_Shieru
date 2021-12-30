@@ -1,0 +1,91 @@
+
+./test/test.om：     文件格式 elf32-littleriscv
+
+
+Disassembly of section .rom:
+
+00000000 <.rom>:
+   0:	00020137          	lui	sp,0x20
+   4:	7fd000ef          	jal	ra,1000 <main>
+   8:	0ff00513          	li	a0,255
+   c:	000306b7          	lui	a3,0x30
+  10:	00a68223          	sb	a0,4(a3) # 30004 <__heap_start+0x2e004>
+  14:	ff9ff06f          	j	c <main-0xff4>
+
+Disassembly of section .text.startup:
+
+00001000 <main>:
+    1000:	ff010113          	addi	sp,sp,-16 # 1fff0 <__heap_start+0x1dff0>
+    1004:	00812623          	sw	s0,12(sp)
+    1008:	00912423          	sw	s1,8(sp)
+    100c:	01212223          	sw	s2,4(sp)
+    1010:	1ff00713          	li	a4,511
+    1014:	000307b7          	lui	a5,0x30
+    1018:	06100913          	li	s2,97
+    101c:	06200493          	li	s1,98
+    1020:	06300413          	li	s0,99
+    1024:	06400393          	li	t2,100
+    1028:	06500293          	li	t0,101
+    102c:	06600f93          	li	t6,102
+    1030:	06700f13          	li	t5,103
+    1034:	06800e93          	li	t4,104
+    1038:	06900e13          	li	t3,105
+    103c:	06a00313          	li	t1,106
+    1040:	06b00893          	li	a7,107
+    1044:	06c00813          	li	a6,108
+    1048:	06d00513          	li	a0,109
+    104c:	06e00593          	li	a1,110
+    1050:	06f00613          	li	a2,111
+    1054:	07000693          	li	a3,112
+    1058:	01278023          	sb	s2,0(a5) # 30000 <__heap_start+0x2e000>
+    105c:	00978023          	sb	s1,0(a5)
+    1060:	00878023          	sb	s0,0(a5)
+    1064:	00778023          	sb	t2,0(a5)
+    1068:	00578023          	sb	t0,0(a5)
+    106c:	01f78023          	sb	t6,0(a5)
+    1070:	01e78023          	sb	t5,0(a5)
+    1074:	01d78023          	sb	t4,0(a5)
+    1078:	01c78023          	sb	t3,0(a5)
+    107c:	00678023          	sb	t1,0(a5)
+    1080:	01178023          	sb	a7,0(a5)
+    1084:	01078023          	sb	a6,0(a5)
+    1088:	00a78023          	sb	a0,0(a5)
+    108c:	00b78023          	sb	a1,0(a5)
+    1090:	00c78023          	sb	a2,0(a5)
+    1094:	00d78023          	sb	a3,0(a5)
+    1098:	fff70713          	addi	a4,a4,-1
+    109c:	fa071ee3          	bnez	a4,1058 <main+0x58>
+    10a0:	00c12403          	lw	s0,12(sp)
+    10a4:	00812483          	lw	s1,8(sp)
+    10a8:	00412903          	lw	s2,4(sp)
+    10ac:	00000513          	li	a0,0
+    10b0:	01010113          	addi	sp,sp,16
+    10b4:	00008067          	ret
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1b41                	addi	s6,s6,-16
+   2:	0000                	unimp
+   4:	7200                	flw	fs0,32(a2)
+   6:	7369                	lui	t1,0xffffa
+   8:	01007663          	bgeu	zero,a6,14 <main-0xfec>
+   c:	0011                	c.nop	4
+   e:	0000                	unimp
+  10:	1004                	addi	s1,sp,32
+  12:	7205                	lui	tp,0xfffe1
+  14:	3376                	fld	ft6,376(sp)
+  16:	6932                	flw	fs2,12(sp)
+  18:	7032                	flw	ft0,44(sp)
+  1a:	0030                	addi	a2,sp,8
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	fmsub.d	ft6,ft6,ft4,ft7,rmm
+   4:	2820                	fld	fs0,80(s0)
+   6:	29554e47          	fmsub.s	ft8,fa0,fs5,ft5,rmm
+   a:	3120                	fld	fs0,96(a0)
+   c:	2e31                	jal	328 <main-0xcd8>
+   e:	2e31                	jal	32a <main-0xcd6>
+  10:	0030                	addi	a2,sp,8

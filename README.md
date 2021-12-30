@@ -17,7 +17,14 @@ A toy but high performance RISC-V CPU.
  - [x] 16 entries RS, 16 entries LSB and 16 entries ROB.
  - [x] Branch Prediction with 512 entries Branch History Buffer.
  - [x] 512 entries Direct-Mapped I-Cache.
- - [ ] Double Issue.
+ - [ ] Double Issue. (Have tried but `WNS` is unacceptable and wait to be optimized)
+
+## Feature
+ - **Continuous memory read / write**, good design makes there is no need to pause between two memory read / write, so that it **only takes 265 seconds to run the test point `heart`**
+ - **Double Issue RS**, can transmit one arithmetic instruction and one control instruction at the same time in one clock cycle
+ - **Finding Idle Position by Lowbit**, which can find the first free position in RS very quickly
+ - **Well-designed Microinstruction Set**, which can quickly determine the type of instruction by specific binary bits
+ - **Branch Prediction Queue in IF**, ROB only needs to pass whether jump or not to IF, and does not need to pass the `pc` of the control instruction, reducing ROB space and required bandwidth
 
 ## Performance
 
